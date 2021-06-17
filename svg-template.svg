@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="450">
+  <script type="text/javascript">
+    function updateClock() {
+      clock=document.getElementById('clock');
+      if (!clock) {
+       setTimeout(updateClock,100);
+      } else {
+       var day={day};
+       var now = new Date();
+       var parts=new Intl.DateTimeFormat('nb-NO',{year:'numeric',month:'numeric',day:'numeric',timeZone:'Europe/Oslo'}).formatToParts(now);
+       var values=parts.map(({type,value})=>{switch(type){case 'year':return parseInt(value,10)*10000; case 'month':return parseInt(value,10)*100; case 'day':return parseInt(value,10); default:return 0}});
+       var dayAsLong=values.reduce((accumulator,value)=>{return accumulator+value});
+       parts=new Intl.DateTimeFormat('nb-NO',{hour:'numeric',minute:'numeric',timeZone:'Europe/Oslo'}).formatToParts(now);
+       values=parts.map(({type,value})=>{switch(type){case 'hour':return parseInt(value,10)*60; case 'minute':return parseInt(value,10); default:return 0}});
+       var timeAsMinutes=values.reduce((accumulator,value)=>{return accumulator+value});
+       var tx=(dayAsLong==day)?(650-50)*timeAsMinutes/(24*60):-55; //Move from x=50 to x=650, or out of canvas if not today
+       clock.setAttribute('transform','translate('+tx+' 0)');
+       setTimeout(updateClock,60000);
+     }
+   }
+   updateClock();
+  </script>
+
+  <!-- Header -->
+  <text x="10" y="30" style="font-size:30px">{zone-description} ({zone-id})</text>
+  <text x="658" y="30" style="font-size:30px" text-anchor="end">{date}</text>
+  
+  <!-- Vertical time-lines -->
+  <g stroke="gray" stroke-width="1" stroke-linecap="square">
+    <path d="M50 50 l0 350 M75 50 l0 350 M100 50 l0 350 M125 50 l0 350 M150 50 l0 350 M175 50 l0 350 M200 50 l0 350 M225 50 l0 350 M250 50 l0 350 M275 50 l0 350 M300 50 l0 350 M325 50 l0 350 M350 50 l0 350 M375 50 l0 350 M400 50 l0 350 M425 50 l0 350 M450 50 l0 350 M475 50 l0 350 M500 50 l0 350 M525 50 l0 350 M550 50 l0 350 M575 50 l0 350 M600 50 l0 350 M625 50 l0 350 M650 50 l0 350"/>
+  </g>
+  <g style="font-size:20px;">
+    <text x="39" y="420">00</text>
+    <text x="114" y="420">03</text>
+    <text x="189" y="420">06</text>
+    <text x="264" y="420">09</text>
+    <text x="339" y="420">12</text>
+    <text x="414" y="420">15</text>
+    <text x="489" y="420">18</text>
+    <text x="564" y="420">21</text>
+    <text x="639" y="420">00</text>
+  </g>
+  <!-- Current time line. Moved by javascript -->
+  <line id="clock" x1="50" y1="95" x2="50" y2="400" stroke="red" stroke-width="2" stroke-linecap="square"/>
+
+  <!-- Horizontal price-lines -->
+  <g stroke="gray" stroke-width="1" stroke-linecap="square" stroke-dasharray="1,12">
+    <path d="M50 100 l600 0 M50 146.7 l600 0 M50 193.3 l600 0 M50 240 l600 0 M50 286.7 l600 0 M50 333.3 l600 0 M50 380 l600 0"/>
+  </g>
+  <!-- price label placeholders -->
+  <g style="font-size:18px;" text-anchor="end">
+    <text x="42" y="387">{y0}</text>
+    <text x="42" y="340.3">{y1}</text>
+    <text x="42" y="293.7">{y2}</text>
+    <text x="42" y="247">{y3}</text>
+    <text x="42" y="200.3">{y4}</text>
+    <text x="42" y="153.7">{y5}</text>
+    <text x="42" y="107">{y6}</text>
+  </g>
+
+  <text x="8" y="60">{currency}</text>
+  
+  <!-- placeholder for other zones -->
+  <g stroke="lightgreen" stroke-width="1" stroke-linecap="square" fill="transparent">
+    <path d="{other1}"/>
+    <path d="{other2}"/>
+    <path d="{other3}"/>
+    <path d="{other4}"/>
+  </g>
+  <!-- placeholder for current zone -->
+  <path stroke="maroon" stroke-width="3" stroke-linecap="square" fill="transparent" d="{current}"/>
+
+  <!-- placeholder for hour prices -->
+  <g style="font-size:14px;" text-anchor="end">
+    <text transform="translate(67,50) rotate(270)">{hour0}</text>
+    <text transform="translate(92,50) rotate(270)">{hour1}</text>
+    <text transform="translate(117,50) rotate(270)">{hour2}</text>
+    <text transform="translate(142,50) rotate(270)">{hour3}</text>
+    <text transform="translate(167,50) rotate(270)">{hour4}</text>
+    <text transform="translate(192,50) rotate(270)">{hour5}</text>
+    <text transform="translate(217,50) rotate(270)">{hour6}</text>
+    <text transform="translate(242,50) rotate(270)">{hour7}</text>
+    <text transform="translate(267,50) rotate(270)">{hour8}</text>
+    <text transform="translate(292,50) rotate(270)">{hour9}</text>
+    <text transform="translate(317,50) rotate(270)">{hour10}</text>
+    <text transform="translate(342,50) rotate(270)">{hour11}</text>
+    <text transform="translate(367,50) rotate(270)">{hour12}</text>
+    <text transform="translate(392,50) rotate(270)">{hour13}</text>
+    <text transform="translate(417,50) rotate(270)">{hour14}</text>
+    <text transform="translate(442,50) rotate(270)">{hour15}</text>
+    <text transform="translate(467,50) rotate(270)">{hour16}</text>
+    <text transform="translate(492,50) rotate(270)">{hour17}</text>
+    <text transform="translate(517,50) rotate(270)">{hour18}</text>
+    <text transform="translate(542,50) rotate(270)">{hour19}</text>
+    <text transform="translate(567,50) rotate(270)">{hour20}</text>
+    <text transform="translate(592,50) rotate(270)">{hour21}</text>
+    <text transform="translate(617,50) rotate(270)">{hour22}</text>
+    <text transform="translate(642,50) rotate(270)">{hour23}</text>
+  </g>
+
+</svg>

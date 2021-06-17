@@ -1,0 +1,54 @@
+# Based on Makefile from <URL: http://hak5.org/forums/index.php?showtopic=2077&p=27959 >
+
+PROGRAM = elspot
+
+############# Main application #################
+all:    $(PROGRAM)
+.PHONY: all
+
+# source files
+DEBUG_INFO = YES
+SOURCES = $(shell find -L . -name '*.cpp'|grep -v "/example/"|sort)
+OBJECTS = $(SOURCES:.cpp=.o)
+DEPS = $(OBJECTS:.o=.dep)
+
+######## compiler- and linker settings #########
+WX_CONFIG := wx-config
+#ifdef WXWIDGETS_VERSION
+ WX_CONFIG += --version=$(WXWIDGETS_VERSION)
+#endif
+CXX = g++
+CXXFLAGS = -I/usr/local/include -I/usr/include -W -Wall -Werror -pipe -std=c++2a
+LIBSFLAGS = -L/usr/local/library -L/usr/local/lib -L/usr/local/lib/x86_64 -lpthread -lpaho-mqtt3as -lpaho-mqttpp3 -lfmt
+
+ifdef DEBUG_INFO
+ CXXFLAGS += -g
+ LIBSFLAGS +=  -lPocoFoundationd -lPocoJSONd -lPocoXMLd -lPocoNetd -lPocoNetSSLd -lPocoCryptod -lPocoUtild
+else
+ CXXFLAGS += -O3
+ LIBSFLAGS +=  -lPocoFoundation -lPocoJSON -lPocoXML -lPocoNet -lPocoNetSSL -lPocoCrypto -lPocoUtil
+endif
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
+
+%.dep: %.cpp
+	$(CXX) $(CXXFLAGS) -MM $< -MT $(<:.cpp=.o) > $@
+
+
+############# Main application #################
+$(PROGRAM):	$(OBJECTS) $(DEPS)
+	$(CXX) -o $@ $(OBJECTS) $(LIBSFLAGS)
+
+################ Dependencies ##################
+ifneq ($(MAKECMDGOALS),clean)
+include $(DEPS)
+endif
+
+################### Clean ######################
+clean:
+	find . -name '*~' -delete
+	-rm -f $(PROGRAM) $(OBJECTS) $(DEPS)
+
+install:
+	strip -s $(PROGRAM)
