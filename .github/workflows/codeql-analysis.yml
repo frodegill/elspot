@@ -52,7 +52,7 @@ jobs:
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
 
     - name: Install dependencies
-      run: sudo apt-get install libpoco-dev libwxbase3.0-dev libpaho-mqtt-dev libfmt-dev git cmake
+      run: sudo apt-get install libpoco-dev libwxbase3.0-dev libfmt-dev git cmake
 
     - name: Install Paho C client
       run: cd && git clone https://github.com/eclipse/paho.mqtt.c.git && cd paho.mqtt.c && cmake -Bbuild -H. -DPAHO_ENABLE_TESTING=OFF -DPAHO_BUILD_STATIC=ON -DPAHO_WITH_SSL=ON -DPAHO_HIGH_PERFORMANCE=ON && sudo cmake --build build/ --target install && sudo ldconfig
