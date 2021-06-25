@@ -7,7 +7,7 @@ all:    $(PROGRAM)
 .PHONY: all
 
 # source files
-DEBUG_INFO = YES
+#DEBUG_INFO = YES
 SOURCES = $(shell find -L . -name '*.cpp'|grep -v "/example/"|sort)
 OBJECTS = $(SOURCES:.cpp=.o)
 DEPS = $(OBJECTS:.o=.dep)
