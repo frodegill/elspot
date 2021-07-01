@@ -57,11 +57,21 @@ bool Currency::FetchEur(const LocalDay& day)
 
   { //Lock scope
     const std::lock_guard<std::mutex> lock(m_failmap_mutex);
-    
+
+#if 0    
     std::erase_if(m_failmap, [fail_expire_time](const auto& item) {
       auto const& [key, value] = item;
       return value < fail_expire_time;
     });
+#else
+    for (std::map<unsigned long, std::chrono::system_clock::time_point>::iterator it=m_failmap.begin(); it!=m_failmap.end(); ++it)
+    {
+        if (it->second < fail_expire_time)
+        {
+          m_failmap.erase(it);
+        }
+    }
+#endif
 
     if (m_failmap.find(day.AsULong()) != m_failmap.end()) //Recently failed?
     {
@@ -128,11 +138,21 @@ bool Currency::FetchEur(const LocalDay& day)
     }
 
     //Remove any old values
+#if 0
     std::erase_if(m_rates, [day](const auto& item)
       {
         auto const& [key, value] = item;
         return key < (day.AsULong()-1);
       });
+#else
+    for (std::map<unsigned long, double>::iterator it=m_rates.begin(); it!=m_rates.end(); ++it)
+    {
+        if (it->first < (day.AsULong()-1))
+        {
+          m_rates.erase(it);
+        }
+    }
+#endif
 
     double exchange_rate = rates_object->getValue<double>("NOK");
     m_rates.insert({day.AsULong(), exchange_rate});

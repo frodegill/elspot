@@ -70,10 +70,20 @@ bool Spotprice::FetchEurRates(const LocalDay& day)
 {
   //Remove expired failures
   auto fail_expire_time = std::chrono::system_clock::now() - RETRY_DURATION;
+#if 0
   std::erase_if(m_failmap, [fail_expire_time](const auto& item) {
     auto const& [key, value] = item;
     return value < fail_expire_time;
   });
+#else
+  for (std::map<unsigned long, std::chrono::system_clock::time_point>::iterator it=m_failmap.begin(); it!=m_failmap.end(); ++it)
+  {
+      if (it->second < fail_expire_time)
+      {
+        m_failmap.erase(it);
+      }
+  }
+#endif
 
   if (m_failmap.find(day.AsULong()) != m_failmap.end()) //Recently failed?
   {
@@ -120,7 +130,7 @@ bool Spotprice::FetchEurRates(const LocalDay& day)
       {
         Poco::Logger::get(Logger::DEFAULT).error(std::string("Spotprice: Didn't get 24 points for ")+day.ToString());
         points->release();
-        return false;
+        return RegisterFail(day);
       }
       
       for (unsigned long point_index=0; point_index<points->length(); point_index++)
