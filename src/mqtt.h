@@ -60,6 +60,7 @@ public:
   
 private:
   std::unique_ptr<mqtt::client> m_mqtt_client;
+  mqtt::connect_options m_connection_options;
 
   std::mutex m_connection_mutex;
 };

@@ -37,7 +37,7 @@ MQTT::MQTT()
              
     connopts.ssl(std::move(sslopts));
   }
-  m_mqtt_client->connect(connopts.finalize());
+  m_connection_options = connopts.finalize();
 }
 
 void MQTT::connection_lost(const std::string& cause)
@@ -65,6 +65,12 @@ bool MQTT::GotPrices(const LocalDay& day)
       return false;
     }
 
+    bool was_connected = m_mqtt_client->is_connected();
+    if (!was_connected)
+    {
+      m_mqtt_client->connect(m_connection_options);
+    }
+
     bool status = Publish(is_today ? "/nordpool/today/exchangerate" : "/nordpool/tomorrow/exchangerate", exchange_rate);
 
     Spotprice::DayRateType eur_rates;
@@ -90,6 +96,11 @@ bool MQTT::GotPrices(const LocalDay& day)
       status &= PublishCurrentPrices();
     }
     
+    if (!was_connected)
+    {
+      m_mqtt_client->disconnect();
+    }
+
     return status;
   }
 }
@@ -102,6 +113,12 @@ bool MQTT::PublishCurrentPrices()
   if (!GetInfo(local_now, area_rates, exchange_rate))
   {
     return false;
+  }
+
+  bool was_connected = m_mqtt_client->is_connected();
+  if (!was_connected)
+  {
+    m_mqtt_client->connect(m_connection_options);
   }
 
   Spotprice::DayRateType eur_rates;
@@ -117,6 +134,12 @@ bool MQTT::PublishCurrentPrices()
     status &= Publish(fmt::sprintf("/nordpool/today/%s/order", Spotprice::m_areas[area_index].id),
             fmt::sprintf("%d", std::lower_bound(sorted_prices.begin(), sorted_prices.end(), eur_rates[local_now.GetHour()], [](const Price& a, double b) {return a.price > b;}) - sorted_prices.begin()));
   }
+  
+  if (!was_connected)
+  {
+    m_mqtt_client->disconnect();
+  }
+  
   return status;
 }
 
