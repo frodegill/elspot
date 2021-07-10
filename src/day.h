@@ -49,7 +49,7 @@ class LocalDay
 friend class UTCTime;
 friend class LocalTime;
 private:
-  static constexpr std::array m_months{"januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"};
+  static constexpr std::array<const char*, 12> m_months{"januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"};
 private:
   LocalDay(const struct tm time_tm_localtime);
 public:
