@@ -47,6 +47,7 @@ void MQTT::connection_lost(const std::string& cause)
 
 bool MQTT::GotPrices(const LocalDay& day)
 {
+  try
   { //Lock scope
     const std::lock_guard<std::mutex> lock(MQTT::m_connection_mutex);
 
@@ -103,44 +104,57 @@ bool MQTT::GotPrices(const LocalDay& day)
 
     return status;
   }
+  catch (const mqtt::exception& exc)
+  {
+    Poco::Logger::get(Logger::DEFAULT).error(exc.get_message());
+    return false;
+  }
 }
 
 bool MQTT::PublishCurrentPrices()
 {
-  LocalTime local_now = UTCTime().AsLocalTime();
-  Spotprice::AreaRateType area_rates;
-  double exchange_rate;
-  if (!GetInfo(local_now, area_rates, exchange_rate))
+  try
   {
+    LocalTime local_now = UTCTime().AsLocalTime();
+    Spotprice::AreaRateType area_rates;
+    double exchange_rate;
+    if (!GetInfo(local_now, area_rates, exchange_rate))
+    {
+      return false;
+    }
+
+    bool was_connected = m_mqtt_client->is_connected();
+    if (!was_connected)
+    {
+      m_mqtt_client->connect(m_connection_options);
+    }
+
+    Spotprice::DayRateType eur_rates;
+    std::array<Price,Spotprice::HOURS_PER_DAY> sorted_prices;
+    bool status = true;
+    for (std::array<Area,5>::size_type area_index=0; area_index<area_rates.size(); area_index++)
+    {
+      eur_rates = area_rates[area_index];
+      CopyAndSortRates(eur_rates, sorted_prices);
+      
+      status &= Publish(fmt::sprintf("/nordpool/today/%s/nok", Spotprice::m_areas[area_index].id), eur_rates[local_now.GetHour()] * exchange_rate);
+      status &= Publish(fmt::sprintf("/nordpool/today/%s/eur", Spotprice::m_areas[area_index].id), eur_rates[local_now.GetHour()]);
+      status &= Publish(fmt::sprintf("/nordpool/today/%s/order", Spotprice::m_areas[area_index].id),
+              fmt::sprintf("%d", std::lower_bound(sorted_prices.begin(), sorted_prices.end(), eur_rates[local_now.GetHour()], [](const Price& a, double b) {return a.price > b;}) - sorted_prices.begin()));
+    }
+    
+    if (!was_connected)
+    {
+      m_mqtt_client->disconnect();
+    }
+    
+    return status;
+  }
+  catch (const mqtt::exception& exc)
+  {
+    Poco::Logger::get(Logger::DEFAULT).error(exc.get_message());
     return false;
   }
-
-  bool was_connected = m_mqtt_client->is_connected();
-  if (!was_connected)
-  {
-    m_mqtt_client->connect(m_connection_options);
-  }
-
-  Spotprice::DayRateType eur_rates;
-  std::array<Price,Spotprice::HOURS_PER_DAY> sorted_prices;
-  bool status = true;
-  for (std::array<Area,5>::size_type area_index=0; area_index<area_rates.size(); area_index++)
-  {
-    eur_rates = area_rates[area_index];
-    CopyAndSortRates(eur_rates, sorted_prices);
-    
-    status &= Publish(fmt::sprintf("/nordpool/today/%s/nok", Spotprice::m_areas[area_index].id), eur_rates[local_now.GetHour()] * exchange_rate);
-    status &= Publish(fmt::sprintf("/nordpool/today/%s/eur", Spotprice::m_areas[area_index].id), eur_rates[local_now.GetHour()]);
-    status &= Publish(fmt::sprintf("/nordpool/today/%s/order", Spotprice::m_areas[area_index].id),
-            fmt::sprintf("%d", std::lower_bound(sorted_prices.begin(), sorted_prices.end(), eur_rates[local_now.GetHour()], [](const Price& a, double b) {return a.price > b;}) - sorted_prices.begin()));
-  }
-  
-  if (!was_connected)
-  {
-    m_mqtt_client->disconnect();
-  }
-  
-  return status;
 }
 
 bool MQTT::Publish(const std::string& topic, const double& value, int precision)
@@ -151,15 +165,9 @@ bool MQTT::Publish(const std::string& topic, const double& value, int precision)
 
 bool MQTT::Publish(const std::string& topic, const std::string& value)
 {
-  try {
-    auto msg = mqtt::make_message(topic, value, mqtt::message::DFLT_QOS, true);
-    m_mqtt_client->publish(msg);
-    return true;
-  }
-  catch (const mqtt::exception& exc) {
-    Poco::Logger::get(Logger::DEFAULT).error(exc.get_message());
-  }
-  return false;
+  auto msg = mqtt::make_message(topic, value, mqtt::message::DFLT_QOS, true);
+  m_mqtt_client->publish(msg);
+  return true;
 }
 
 bool MQTT::GetInfo(const LocalDay& day, Spotprice::AreaRateType& area_rates, double& exchange_rate) const
