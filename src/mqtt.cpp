@@ -72,7 +72,7 @@ bool MQTT::GotPrices(const LocalDay& day)
       m_mqtt_client->connect(m_connection_options);
     }
 
-    bool status = Publish(is_today ? "/nordpool/today/exchangerate" : "/nordpool/tomorrow/exchangerate", exchange_rate);
+    bool status = Publish(is_today ? "nordpool/today/exchangerate" : "nordpool/tomorrow/exchangerate", exchange_rate);
 
     Spotprice::DayRateType eur_rates;
     std::array<Price,Spotprice::HOURS_PER_DAY> sorted_prices;
@@ -83,11 +83,11 @@ bool MQTT::GotPrices(const LocalDay& day)
       
       for (int index=0; index<Spotprice::HOURS_PER_DAY; index++)
       {
-        status &= Publish(fmt::sprintf(is_today ? "/nordpool/today/%s/nok%02d" : "/nordpool/tomorrow/%s/nok%02d", Spotprice::m_areas[area_index].id, index), eur_rates[index] * exchange_rate);
-        status &= Publish(fmt::sprintf(is_today ? "/nordpool/today/%s/eur%02d" : "/nordpool/tomorrow/%s/eur%02d", Spotprice::m_areas[area_index].id, index), eur_rates[index]);
-        status &= Publish(fmt::sprintf(is_today ? "/nordpool/today/%s/order%02d" : "/nordpool/tomorrow/%s/order%02d", Spotprice::m_areas[area_index].id, index),
+        status &= Publish(fmt::sprintf(is_today ? "nordpool/today/%s/nok%02d" : "nordpool/tomorrow/%s/nok%02d", Spotprice::m_areas[area_index].id, index), eur_rates[index] * exchange_rate);
+        status &= Publish(fmt::sprintf(is_today ? "nordpool/today/%s/eur%02d" : "nordpool/tomorrow/%s/eur%02d", Spotprice::m_areas[area_index].id, index), eur_rates[index]);
+        status &= Publish(fmt::sprintf(is_today ? "nordpool/today/%s/order%02d" : "nordpool/tomorrow/%s/order%02d", Spotprice::m_areas[area_index].id, index),
                 fmt::sprintf("%d", std::lower_bound(sorted_prices.begin(), sorted_prices.end(), eur_rates[index], [](const Price& a, double b) {return a.price > b;}) - sorted_prices.begin()));
-        status &= Publish(fmt::sprintf(is_today ? "/nordpool/today/%s/sorted%d" : "/nordpool/tomorrow/%s/sorted%d", Spotprice::m_areas[area_index].id, index),
+        status &= Publish(fmt::sprintf(is_today ? "nordpool/today/%s/sorted%d" : "nordpool/tomorrow/%s/sorted%d", Spotprice::m_areas[area_index].id, index),
                 fmt::sprintf("%02d", sorted_prices[index].hour));
       }
     }
@@ -137,9 +137,9 @@ bool MQTT::PublishCurrentPrices()
       eur_rates = area_rates[area_index];
       CopyAndSortRates(eur_rates, sorted_prices);
       
-      status &= Publish(fmt::sprintf("/nordpool/today/%s/nok", Spotprice::m_areas[area_index].id), eur_rates[local_now.GetHour()] * exchange_rate);
-      status &= Publish(fmt::sprintf("/nordpool/today/%s/eur", Spotprice::m_areas[area_index].id), eur_rates[local_now.GetHour()]);
-      status &= Publish(fmt::sprintf("/nordpool/today/%s/order", Spotprice::m_areas[area_index].id),
+      status &= Publish(fmt::sprintf("nordpool/today/%s/nok", Spotprice::m_areas[area_index].id), eur_rates[local_now.GetHour()] * exchange_rate);
+      status &= Publish(fmt::sprintf("nordpool/today/%s/eur", Spotprice::m_areas[area_index].id), eur_rates[local_now.GetHour()]);
+      status &= Publish(fmt::sprintf("nordpool/today/%s/order", Spotprice::m_areas[area_index].id),
               fmt::sprintf("%d", std::lower_bound(sorted_prices.begin(), sorted_prices.end(), eur_rates[local_now.GetHour()], [](const Price& a, double b) {return a.price > b;}) - sorted_prices.begin()));
     }
     

@@ -11,19 +11,19 @@
 #if 0
 (<sone> is "NO-1", "NO-2", "NO-3", "NO-4" or "NO-5")
 
-/nordpool/today/exchangerate               : Exchangerate used for EUR-NOK. Set to NOK for 1EUR
-/nordpool/today/<sone>/nok                 : Current price in NOK. Set to NOK/KWh
-/nordpool/today/<sone>/eur                 : Current price in EUR. Set to EUR/KWh
-/nordpool/today/<sone>/order               : Current order, from most expensive (0) to least expensive (23). Set to 0-23
-/nordpool/today/<sone>/nok<[00]-[23]>      : Price in NOK for a given hour. Set to NOK/KWh
-/nordpool/today/<sone>/eur<[00]-[23]>      : Price in EUR for a given hour. Set to EUR/KWh
-/nordpool/today/<sone>/order[00]-[23]>     : Order for a given hour, from most expensive (0) to least expensive (23). Set to 0-23
-/nordpool/today/<sone>/sorted<[0]-[23]>    : Hour reference from the most expensive (0) to least expensive (23). Set to 00-23
-/nordpool/tomorrow/exchangerate            : Exchangerate used for EUR-NOK. Set to NOK for 1EUR
-/nordpool/tomorrow/<sone>/nok<[00]-[23]>   : Price in NOK for a given hour. Set to NOK/KWh
-/nordpool/tomorrow/<sone>/eur<[00]-[23]>   : Price in EUR for a given hour. Set to EUR/KWh
-/nordpool/tomorrow/<sone>/order[00]-[23]>  : Order for a given hour, from most expensive (0) to least expensive (23). Set to 0-23
-/nordpool/tomorrow/<sone>/sorted<[0]-[23]> : Hour reference from the most expensive (0) to least expensive (23). Set to 00-23
+nordpool/today/exchangerate               : Exchangerate used for EUR-NOK. Set to NOK for 1EUR
+nordpool/today/<sone>/nok                 : Current price in NOK. Set to NOK/KWh
+nordpool/today/<sone>/eur                 : Current price in EUR. Set to EUR/KWh
+nordpool/today/<sone>/order               : Current order, from most expensive (0) to least expensive (23). Set to 0-23
+nordpool/today/<sone>/nok<[00]-[23]>      : Price in NOK for a given hour. Set to NOK/KWh
+nordpool/today/<sone>/eur<[00]-[23]>      : Price in EUR for a given hour. Set to EUR/KWh
+nordpool/today/<sone>/order[00]-[23]>     : Order for a given hour, from most expensive (0) to least expensive (23). Set to 0-23
+nordpool/today/<sone>/sorted<[0]-[23]>    : Hour reference from the most expensive (0) to least expensive (23). Set to 00-23
+nordpool/tomorrow/exchangerate            : Exchangerate used for EUR-NOK. Set to NOK for 1EUR
+nordpool/tomorrow/<sone>/nok<[00]-[23]>   : Price in NOK for a given hour. Set to NOK/KWh
+nordpool/tomorrow/<sone>/eur<[00]-[23]>   : Price in EUR for a given hour. Set to EUR/KWh
+nordpool/tomorrow/<sone>/order[00]-[23]>  : Order for a given hour, from most expensive (0) to least expensive (23). Set to 0-23
+nordpool/tomorrow/<sone>/sorted<[0]-[23]> : Hour reference from the most expensive (0) to least expensive (23). Set to 00-23
 #endif
 
 struct Price
