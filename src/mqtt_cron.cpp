@@ -23,7 +23,7 @@ void MQTTCron::main()
         break; //Success! Bail out
       }
       else {
-        Poco::Logger::get(Logger::DEFAULT).information("MQTT publich failed. Wait 5 minutes, retry");
+        Poco::Logger::get(Logger::DEFAULT).information("MQTT publish failed. Wait 5 minutes, retry");
         std::this_thread::sleep_for(std::chrono::minutes(5)); //Wait 5 minutes, retry
       }
     }
