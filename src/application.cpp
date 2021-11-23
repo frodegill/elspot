@@ -1,7 +1,9 @@
 #include "application.h"
 
 #include <thread>
-
+#include <Poco/FileChannel.h>
+#include <Poco/FormattingChannel.h>
+#include <Poco/PatternFormatter.h>
 
 
 POCO_APP_MAIN(Elspot)
@@ -33,6 +35,12 @@ Logger& Elspot::logger()
 
 int Elspot::run()
 {
+  Poco::AutoPtr<Poco::FileChannel> log_file(new Poco::FileChannel("/tmp/elspot.log"));
+  log_file->setProperty("rotateOnOpen","false");
+  Poco::AutoPtr<Poco::Formatter> log_formatter(new Poco::PatternFormatter("%d-%m-%Y %H:%M:%S %s: %t"));
+  log_formatter->setProperty("times","local");
+  Poco::AutoPtr<Poco::Channel> log_formattingchannel(new Poco::FormattingChannel(log_formatter,log_file));
+  Poco::Logger::get(Logger::DEFAULT).setChannel(log_formattingchannel);
   Poco::Logger::get(Logger::DEFAULT).setLevel(Poco::Message::PRIO_INFORMATION);
 
   std::thread mqtt_cron(&MQTTCron::main, m_mqtt_cron);
