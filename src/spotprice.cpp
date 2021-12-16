@@ -91,6 +91,7 @@ bool Spotprice::FetchEurRates(const LocalDay& day)
     return false;
   }
 
+  std::string xml_buffer;
   Poco::XML::NodeList* points = nullptr;
   try
   {
@@ -124,7 +125,8 @@ bool Spotprice::FetchEurRates(const LocalDay& day)
 
       Poco::XML::DOMParser dom_parser;
       Poco::XML::InputSource xml_src(session->receiveResponse(res));
-      Poco::AutoPtr<Poco::XML::Document> xml_doc = dom_parser.parse(&xml_src);
+      xml_buffer = std::string(std::istreambuf_iterator<char>(*xml_src.getByteStream()), {});
+      Poco::AutoPtr<Poco::XML::Document> xml_doc = dom_parser.parseString(xml_buffer);
       points = xml_doc->getElementsByTagName("Point");
       if (points->length() < 24)
       {
@@ -170,6 +172,11 @@ bool Spotprice::FetchEurRates(const LocalDay& day)
   catch (Poco::Exception& ex)
   {
     Poco::Logger::get(Logger::DEFAULT).error(ex.message());
+    if (!xml_buffer.empty())
+    {
+      Poco::Logger::get(Logger::DEFAULT).error(xml_buffer);
+    }
+    
     if (points)
     {
       points->release();
