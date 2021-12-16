@@ -6,6 +6,7 @@
 
 void SpotpriceCron::main()
 {
+  bool first = true;
   LocalDay most_recent_today = UTCTime(0).AsLocalDay();
   LocalDay most_recent_tomorrow = UTCTime(0).AsLocalDay();
 
@@ -31,35 +32,40 @@ void SpotpriceCron::main()
     }
 
     //According to Nordpool, final day-ahead bids must be submitted before 1200 CET, and "typically announced to the market at 12:42 CET or later". 1242 CET is 1142 UTC.
-    //To not jump the gun too early, try polling every 20 minute starting at 1400 UTC
+    //Try polling every 20 minute starting at 1200 UTC
 
-    //Wait until at least 1400 UTC (unless caching of today failed. In that case, caching of today should be retried after a short pause)
+    //Wait until at least 1200 UTC (unless caching of today failed. In that case, caching of today should be retried after a short pause)
     UTCTime poll_time;
     poll_time = poll_time.Increment(poll_time.GetLocalTimezoneOffset()); //Make sure we're at the correct local_day
-    poll_time.SetTime(14, 0, 0);
+    poll_time.SetTime(12, 0, 0);
 
     if (most_recent_today==today && most_recent_tomorrow!=tomorrow && now<poll_time)
     {
       std::this_thread::sleep_until(std::chrono::system_clock::from_time_t(poll_time.AsUTCTimeT()));
     }
 
-    //After 1400 UTC, try to cache any not already cached prices up to 3 times an hour (at XX:00, XX:20 and XX:40)
+    //After 1200 UTC, try to cache any not already cached prices up to 3 times an hour (at XX:00, XX:20 and XX:40)
     now = UTCTime();
     if (now >= poll_time)
     {
       if (most_recent_today!=today || most_recent_tomorrow!=tomorrow)
       {
-        poll_time = UTCTime().Increment(20*60);
-        poll_time.SetMinute((poll_time.GetMinute()/20)*20); //Integer division to round down to 00|20|40
-        poll_time.SetSecond(0);
-        std::this_thread::sleep_until(std::chrono::system_clock::from_time_t(poll_time.AsUTCTimeT()));
-
+        if (!first)
+        {
+          poll_time = UTCTime().Increment(20*60);
+          poll_time.SetMinute((poll_time.GetMinute()/20)*20); //Integer division to round down to 00|20|40
+          poll_time.SetSecond(0);
+          std::this_thread::sleep_until(std::chrono::system_clock::from_time_t(poll_time.AsUTCTimeT()));
+        }
+        
         //If, however unlikely, we have waited until midnight, restart loop iteration to reflect change of day
         if (UTCTime().AsLocalDay() != today)
         {
           Poco::Logger::get(Logger::DEFAULT).information("SpotpriceCron passed midnight");
           continue;
         }
+        
+        first = false;
         
         //Are we STILL not having todays prices? Keep on trying..
         if (most_recent_today != today)
