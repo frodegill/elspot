@@ -128,13 +128,16 @@ bool Spotprice::FetchEurRates(const LocalDay& day)
       xml_buffer = std::string(std::istreambuf_iterator<char>(*xml_src.getByteStream()), {});
       Poco::AutoPtr<Poco::XML::Document> xml_doc = dom_parser.parseString(xml_buffer);
       points = xml_doc->getElementsByTagName("Point");
-      if (points->length() < 24)
+      if (points->length()<23 || points->length()>25)
       {
-        Poco::Logger::get(Logger::DEFAULT).error(std::string("Spotprice: Didn't get 24 points for ")+day.ToString());
+        Poco::Logger::get(Logger::DEFAULT).error(std::string("Spotprice: Didn't get 24 +/- 1 points for ")+day.ToString());
         points->release();
         return RegisterFail(day);
       }
       
+      bool winter_to_summertime = points->length()==23;
+      bool summer_to_wintertime = points->length()==23;
+      int offset = 0;
       for (unsigned long point_index=0; point_index<points->length(); point_index++)
       {
         Poco::XML::Node* point = points->item(point_index);
@@ -148,11 +151,25 @@ bool Spotprice::FetchEurRates(const LocalDay& day)
             std::string price_amount_value = price_amount->innerText();
             if (!position_value.empty() && !price_amount_value.empty())
             {
-              int position_index = std::stoi(position_value) - 1; //Position_value is [1-24]
+              int position_index = std::stoi(position_value) - 1; //Position_value is [1-24], unless change to summer- or wintertime
               double price = std::stod(price_amount_value);
-              if (0<=position_index && HOURS_PER_DAY>position_index)
+              if (winter_to_summertime)
               {
-                area_prices[position_index] = price;
+                offset = position_index>1 ? 1 : 0;
+              }
+              else if (summer_to_wintertime)
+              {
+                offset = position_index>1 ? -1 : 0;
+              }
+
+              if (0<=(position_index+offset) && HOURS_PER_DAY>(position_index+offset))
+              {
+                area_prices[position_index+offset] = price;
+
+                if (winter_to_summertime && position_index==1)
+                {
+                  area_prices[position_index+1] = price;
+                }
               }
             }
           }
