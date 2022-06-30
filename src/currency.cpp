@@ -142,12 +142,12 @@ bool Currency::FetchEur(const LocalDay& day)
     std::erase_if(m_rates, [day](const auto& item)
       {
         auto const& [key, value] = item;
-        return key < (day.AsULong()-1);
+        return day.DaysAfter(key) > 1;
       });
 #else
     for (std::map<unsigned long, double>::iterator it=m_rates.begin(); it!=m_rates.end(); ++it)
     {
-        if (it->first < (day.AsULong()-1))
+        if (day.DaysAfter(it->first) > 1)
         {
           m_rates.erase(it);
         }

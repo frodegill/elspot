@@ -82,6 +82,15 @@ LocalDay::LocalDay(const struct tm time_tm_localtime) :
 {
 }
 
+LocalDay::LocalDay(unsigned long as_ulong)
+{
+  m_day = as_ulong%100;
+  as_ulong = (as_ulong - m_day) / 100;
+  m_month = as_ulong%100;
+  as_ulong = (as_ulong - m_month) / 100;
+  m_year = as_ulong;
+}
+
 std::string LocalDay::ToString() const
 {
   return fmt::sprintf("%u.%s %u", GetDay()%99, m_months[GetMonth()-1], GetYear()%9999);
@@ -98,6 +107,35 @@ bool LocalDay::IsTomorrow() const
   UTCTime today = UTCTime();
   LocalDay tomorrow = today.Increment(24*60*60).AsLocalDay();
   return AsULong() == tomorrow.AsULong();
+}
+
+signed long LocalDay::DaysAfter(const LocalDay& other) const
+{
+  std::tm t;
+  t.tm_year = GetYear() - 1900;
+  t.tm_mon = GetMonth() - 1;
+  t.tm_mday = GetDay();
+  t.tm_hour = 12;
+  t.tm_min = t.tm_sec = 0;
+  std::time_t tt = std::mktime(&t);
+  if (-1 == tt)
+  {
+    return -9999;
+  }
+
+  std::tm o;
+  o.tm_year = other.GetYear() - 1900;
+  o.tm_mon = other.GetMonth() - 1;
+  o.tm_mday = other.GetDay();
+  o.tm_hour = 12;
+  o.tm_min = o.tm_sec = 0;
+  std::time_t to = std::mktime(&o);
+  if (-1 == to)
+  {
+    return 9999;
+  }
+
+  return std::difftime(tt, to) / (60 * 60 * 24);
 }
 
 

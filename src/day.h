@@ -52,6 +52,8 @@ private:
   static constexpr std::array<const char*, 12> m_months{"januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"};
 private:
   LocalDay(const struct tm time_tm_localtime);
+  LocalDay(unsigned long as_ulong);
+  LocalDay(uint16_t year, uint8_t month, uint8_t day) : m_year(year), m_month(month), m_day(day) {}
 public:
   [[nodiscard]] bool operator<(const LocalDay& other) const {return AsULong()<other.AsULong();}
   [[nodiscard]] bool operator==(const LocalDay& other) const {return AsULong()==other.AsULong();}
@@ -60,6 +62,8 @@ public:
   [[nodiscard]] virtual std::string ToString() const;
   [[nodiscard]] bool IsToday() const;
   [[nodiscard]] bool IsTomorrow() const;
+  [[nodiscard]] signed long DaysAfter(unsigned long other) const {return DaysAfter(LocalDay(other));}
+  [[nodiscard]] signed long DaysAfter(const LocalDay& other) const;
   [[nodiscard]] uint16_t GetYear() const {return m_year;}
   [[nodiscard]] uint8_t GetMonth() const {return m_month;}
   [[nodiscard]] uint8_t GetDay() const {return m_day;}
