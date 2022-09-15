@@ -1,6 +1,6 @@
 # Based on Makefile from <URL: http://hak5.org/forums/index.php?showtopic=2077&p=27959 >
 
-PROGRAM = elspot
+PROGRAM = elspot-tests
 
 ############# Main application #################
 all:    $(PROGRAM)
@@ -8,7 +8,7 @@ all:    $(PROGRAM)
 
 # source files
 #DEBUG_INFO = YES
-SOURCES = $(shell find -L . -name '*.cpp'|grep -v "/example/"|grep -v "/tests/"|sort)
+SOURCES = $(shell find -L . -name '*.cpp'|grep "/tests/"|sort)
 OBJECTS = $(SOURCES:.cpp=.o)
 DEPS = $(OBJECTS:.o=.dep)
 
@@ -19,7 +19,7 @@ WX_CONFIG := wx-config
 #endif
 CXX = g++
 CXXFLAGS = -I/usr/local/include -I/usr/include -W -Wall -Werror -pipe -std=c++2a
-LIBSFLAGS = -L/usr/local/library -L/usr/local/lib -L/usr/local/lib/x86_64 -lpthread -lpaho-mqtt3as -lpaho-mqttpp3 -lfmt
+LIBSFLAGS = -L/usr/local/library -L/usr/local/lib -L/usr/local/lib/x86_64 -lpthread -lpaho-mqtt3as -lpaho-mqttpp3 -lfmt -lgtest -lgtest_main
 
 ifdef DEBUG_INFO
  CXXFLAGS += -g
