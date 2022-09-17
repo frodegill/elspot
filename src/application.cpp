@@ -6,8 +6,6 @@
 #include <Poco/PatternFormatter.h>
 
 
-POCO_APP_MAIN(Elspot)
-
 Poco::AutoPtr<Elspot> g_application;
 Elspot* GetApp() {return g_application;}
 

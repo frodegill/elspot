@@ -8,7 +8,7 @@ all:    $(PROGRAM)
 
 # source files
 #DEBUG_INFO = YES
-SOURCES = $(shell find -L . -name '*.cpp'|grep "/tests/"|sort)
+SOURCES = $(shell find -L . -name '*.cpp'|grep -v "/example/"|grep -v "main.cpp"|sort)
 OBJECTS = $(SOURCES:.cpp=.o)
 DEPS = $(OBJECTS:.o=.dep)
 
