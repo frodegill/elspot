@@ -46,13 +46,13 @@ public:
   void connection_lost(const std::string& cause) override;
   
 public:
-  [[nodiscard]] bool GotPrices(const LocalDay& day);
+  [[nodiscard]] bool GotPrices(const NorwegianDay& norwegian_day);
   [[nodiscard]] bool PublishCurrentPrices();
 
 private:
   [[nodiscard]] bool Publish(const std::string& topic, const double& value, int precision=2);
   [[nodiscard]] bool Publish(const std::string& topic, const std::string& value);
-  [[nodiscard]] bool GetInfo(const LocalDay& day, Spotprice::AreaRateType& area_rates, double& exchange_rate) const;
+  [[nodiscard]] bool GetInfo(const NorwegianDay& norwegian_day, Spotprice::AreaRateType& area_rates, double& exchange_rate) const;
   void CopyAndSortRates(const Spotprice::DayRateType& eur_rates, std::array<Price,Spotprice::HOURS_PER_DAY>& sorted_prices) const;
   
 public:

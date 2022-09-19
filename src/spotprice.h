@@ -39,13 +39,13 @@ public:
     typedef std::array<DayRateType,m_areas.size()> AreaRateType;
 
 public:
-  [[nodiscard]] bool HasEurRate(const LocalDay& day);
-  [[nodiscard]] bool CacheEurRates(const LocalDay& day);
-  [[nodiscard]] bool GetEurRates(const LocalDay& day, AreaRateType& eur_rates);
+  [[nodiscard]] bool HasEurRate(const NorwegianDay& norwegian_day);
+  [[nodiscard]] bool CacheEurRates(const NorwegianDay& norwegian_day);
+  [[nodiscard]] bool GetEurRates(const NorwegianDay& norwegian_day, AreaRateType& eur_rates);
   
 private:
-  [[nodiscard]] bool FetchEurRates(const LocalDay& day); //Not thread-safe funtion. Call from within locked m_eur_rates_mutex
-  [[nodiscard]] bool RegisterFail(const LocalDay& day);
+  [[nodiscard]] bool FetchEurRates(const NorwegianDay& norwegian_day); //Not thread-safe funtion. Call from within locked m_eur_rates_mutex
+  [[nodiscard]] bool RegisterFail(const NorwegianDay& norwegian_day);
 
 private:
   std::map<unsigned long, AreaRateType> m_eur_rates;

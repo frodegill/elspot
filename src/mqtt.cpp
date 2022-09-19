@@ -45,22 +45,22 @@ void MQTT::connection_lost(const std::string& cause)
   Poco::Logger::get(Logger::DEFAULT).warning(std::string("MQTT Connection lost: ")+cause);
 }
 
-bool MQTT::GotPrices(const LocalDay& day)
+bool MQTT::GotPrices(const NorwegianDay& norwegian_day)
 {
   try
   { //Lock scope
     const std::lock_guard<std::mutex> lock(MQTT::m_connection_mutex);
 
-    bool is_today = day.IsToday();
-    if (!is_today && !day.IsTomorrow())
+    bool is_today = norwegian_day.IsToday();
+    if (!is_today && !norwegian_day.IsTomorrow())
     {
-      Poco::Logger::get(Logger::DEFAULT).error(day.ToString()+std::string(" is not today/tomorrow"));
+      Poco::Logger::get(Logger::DEFAULT).error(norwegian_day.ToString()+std::string(" is not today/tomorrow"));
       return false;
     }
 
     Spotprice::AreaRateType area_rates;
     double exchange_rate;
-    if (!GetInfo(day, area_rates, exchange_rate))
+    if (!GetInfo(norwegian_day, area_rates, exchange_rate))
     {
       Poco::Logger::get(Logger::DEFAULT).information("MQTT GotPrices failed at GetInfo");
       return false;
@@ -115,10 +115,10 @@ bool MQTT::PublishCurrentPrices()
 {
   try
   {
-    LocalTime local_now = UTCTime().AsLocalTime();
+    NorwegianTime norwegian_now = UTCTime().AsNorwegianTime();
     Spotprice::AreaRateType area_rates;
     double exchange_rate;
-    if (!GetInfo(local_now, area_rates, exchange_rate))
+    if (!GetInfo(norwegian_now, area_rates, exchange_rate))
     {
       return false;
     }
@@ -137,10 +137,10 @@ bool MQTT::PublishCurrentPrices()
       eur_rates = area_rates[area_index];
       CopyAndSortRates(eur_rates, sorted_prices);
       
-      status &= Publish(fmt::sprintf("nordpool/today/%s/nok", Spotprice::m_areas[area_index].id), eur_rates[local_now.GetHour()] * exchange_rate);
-      status &= Publish(fmt::sprintf("nordpool/today/%s/eur", Spotprice::m_areas[area_index].id), eur_rates[local_now.GetHour()]);
+      status &= Publish(fmt::sprintf("nordpool/today/%s/nok", Spotprice::m_areas[area_index].id), eur_rates[norwegian_now.GetHour()] * exchange_rate);
+      status &= Publish(fmt::sprintf("nordpool/today/%s/eur", Spotprice::m_areas[area_index].id), eur_rates[norwegian_now.GetHour()]);
       status &= Publish(fmt::sprintf("nordpool/today/%s/order", Spotprice::m_areas[area_index].id),
-              fmt::sprintf("%d", std::lower_bound(sorted_prices.begin(), sorted_prices.end(), eur_rates[local_now.GetHour()], [](const Price& a, double b) {return a.price > b;}) - sorted_prices.begin()));
+              fmt::sprintf("%d", std::lower_bound(sorted_prices.begin(), sorted_prices.end(), eur_rates[norwegian_now.GetHour()], [](const Price& a, double b) {return a.price > b;}) - sorted_prices.begin()));
     }
     
     if (!was_connected)
@@ -170,17 +170,17 @@ bool MQTT::Publish(const std::string& topic, const std::string& value)
   return true;
 }
 
-bool MQTT::GetInfo(const LocalDay& day, Spotprice::AreaRateType& area_rates, double& exchange_rate) const
+bool MQTT::GetInfo(const NorwegianDay& norwegian_day, Spotprice::AreaRateType& area_rates, double& exchange_rate) const
 {
-  if (!::GetApp()->getSpotprice()->GetEurRates(day, area_rates))
+  if (!::GetApp()->getSpotprice()->GetEurRates(norwegian_day, area_rates))
   {
-    Poco::Logger::get(Logger::DEFAULT).error(std::string("Failed to get EUR rates for ") + day.ToString());
+    Poco::Logger::get(Logger::DEFAULT).error(std::string("Failed to get EUR rates for ") + norwegian_day.ToString());
     return false;
   }
 
-  if (!::GetApp()->getCurrency()->GetExchangeRate(day, exchange_rate))
+  if (!::GetApp()->getCurrency()->GetExchangeRate(norwegian_day, exchange_rate))
   {
-    Poco::Logger::get(Logger::DEFAULT).error(std::string("Failed to get exchange rate for ") + day.ToString());
+    Poco::Logger::get(Logger::DEFAULT).error(std::string("Failed to get exchange rate for ") + norwegian_day.ToString());
     return false;
   }
   

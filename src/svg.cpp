@@ -13,9 +13,9 @@
 #include "application.h"
 
 
-bool SVG::GenerateSVGs(const LocalDay& day) const
+bool SVG::GenerateSVGs(const NorwegianDay& norwegian_day) const
 {
-  if (!day.IsToday() && !day.IsTomorrow())
+  if (!norwegian_day.IsToday() && !norwegian_day.IsTomorrow())
     return true; //Nothing to do
 
   //Read SVG template
@@ -30,35 +30,35 @@ bool SVG::GenerateSVGs(const LocalDay& day) const
 
   //Get prices
   Spotprice::AreaRateType area_rates;
-  if (!::GetApp()->getSpotprice()->GetEurRates(day, area_rates))
+  if (!::GetApp()->getSpotprice()->GetEurRates(norwegian_day, area_rates))
     return false;
 
   double exchange_rate;
-  bool found_nok = ::GetApp()->getCurrency()->GetExchangeRate(day, exchange_rate);
+  bool found_nok = ::GetApp()->getCurrency()->GetExchangeRate(norwegian_day, exchange_rate);
 
   bool status = true;
   for (std::array<Area,5>::size_type area_index=0; area_index<area_rates.size(); area_index++)
   {
-    status &= GenerateSVG(svg_template, day, "EUR", 1.0, area_rates, area_index);
+    status &= GenerateSVG(svg_template, norwegian_day, "EUR", 1.0, area_rates, area_index);
 
     if (found_nok)
     {
-      status &= GenerateSVG(svg_template, day, "NOK", exchange_rate, area_rates, area_index);
+      status &= GenerateSVG(svg_template, norwegian_day, "NOK", exchange_rate, area_rates, area_index);
     }
   }
   return status;
 }
 
 /* All applications has an ugly part. For this application, this is it. Sorry. */
-bool SVG::GenerateSVG(const std::string& svg_template, const LocalDay& day, const std::string& currency_name, const double& exchange_rate, const Spotprice::AreaRateType& area_rates, const std::array<Area,5>::size_type& area_index) const
+bool SVG::GenerateSVG(const std::string& svg_template, const NorwegianDay& norwegian_day, const std::string& currency_name, const double& exchange_rate, const Spotprice::AreaRateType& area_rates, const std::array<Area,5>::size_type& area_index) const
 {
   std::string svg_content = svg_template;
   
-  boost::replace_all(svg_content, "{day}", std::to_string(day.AsULong()));
+  boost::replace_all(svg_content, "{day}", std::to_string(norwegian_day.AsULong()));
   boost::replace_all(svg_content, "{currency}", currency_name);
   boost::replace_all(svg_content, "{zone-id}", Spotprice::m_areas[area_index].id);
   boost::replace_all(svg_content, "{zone-description}", Spotprice::m_areas[area_index].name);
-  boost::replace_all(svg_content, "{date}", day.ToString());
+  boost::replace_all(svg_content, "{date}", norwegian_day.ToString());
   
   //Find min/max
   double min_rate=0.0, max_rate=INT_MIN, current_rate;
@@ -126,7 +126,7 @@ bool SVG::GenerateSVG(const std::string& svg_template, const LocalDay& day, cons
   }
 
   //Write to file
-  std::string filename = fmt::sprintf(day.IsToday() ? "%s/today-%s-%s.svg" : "%s/tomorrow-%s-%s.svg",
+  std::string filename = fmt::sprintf(norwegian_day.IsToday() ? "%s/today-%s-%s.svg" : "%s/tomorrow-%s-%s.svg",
                     ::GetApp()->GetConfig(Elspot::SVG_DIRECTORY_PROPERTY),
                     Spotprice::m_areas[area_index].id,
                     currency_name);

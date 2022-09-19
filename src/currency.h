@@ -17,11 +17,11 @@ private:
 
 public:
   [[nodiscard]] bool GetCurrentExchangeRate(double& rate);
-  [[nodiscard]] bool GetExchangeRate(const LocalDay& day, double& rate);
+  [[nodiscard]] bool GetExchangeRate(const NorwegianDay& norwegian_day, double& rate);
 
 private:
-  [[nodiscard]] bool FetchEur(const LocalDay& day); //Not thread-safe funtion. Call from within locked m_rates_mutex
-  [[nodiscard]] bool RegisterFail(const LocalDay& day);
+  [[nodiscard]] bool FetchEur(const NorwegianDay& norwegian_day); //Not thread-safe funtion. Call from within locked m_rates_mutex
+  [[nodiscard]] bool RegisterFail(const NorwegianDay& norwegian_day);
 
 private:
   std::map<unsigned long, double> m_rates;

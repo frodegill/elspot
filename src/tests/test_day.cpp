@@ -11,7 +11,7 @@ TEST(TestDay, EpochTest) {
   EXPECT_EQ(utc_time.GetHour(), 0);
   EXPECT_EQ(utc_time.GetMinute(), 0);
   EXPECT_EQ(utc_time.GetSecond(), 0);
-  EXPECT_EQ(utc_time.GetLocalTimezoneOffset(), 3600);
+  EXPECT_EQ(utc_time.GetNorwegianTimezoneOffset(), 3600);
 }
 
 /*

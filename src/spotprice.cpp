@@ -21,28 +21,28 @@
 #include "application.h"
 
 
-bool Spotprice::HasEurRate(const LocalDay& day)
+bool Spotprice::HasEurRate(const NorwegianDay& norwegian_day)
 {
   { //Lock scope
     const std::lock_guard<std::mutex> lock(m_eur_rates_mutex);
 
-    return m_eur_rates.find(day.AsULong()) != m_eur_rates.end();
+    return m_eur_rates.find(norwegian_day.AsULong()) != m_eur_rates.end();
   }
 }
 
-bool Spotprice::CacheEurRates(const LocalDay& day)
+bool Spotprice::CacheEurRates(const NorwegianDay& norwegian_day)
 {
   AreaRateType dummy;
-  return GetEurRates(day, dummy);
+  return GetEurRates(norwegian_day, dummy);
 }
 
-bool Spotprice::GetEurRates(const LocalDay& day, AreaRateType& eur_rates)
+bool Spotprice::GetEurRates(const NorwegianDay& norwegian_day, AreaRateType& eur_rates)
 {
   { //Lock scope
     const std::lock_guard<std::mutex> lock(m_failmap_mutex);
 
     //Already fetched?
-    auto existing_rate = m_eur_rates.find(day.AsULong());
+    auto existing_rate = m_eur_rates.find(norwegian_day.AsULong());
     if (existing_rate != m_eur_rates.end())
     {
       eur_rates = existing_rate->second;
@@ -50,11 +50,11 @@ bool Spotprice::GetEurRates(const LocalDay& day, AreaRateType& eur_rates)
     }
     
     //Fetch rate!
-    if (!FetchEurRates(day))
+    if (!FetchEurRates(norwegian_day))
         return false;
 
     //Has it been fetched?
-    existing_rate = m_eur_rates.find(day.AsULong());
+    existing_rate = m_eur_rates.find(norwegian_day.AsULong());
     if (existing_rate == m_eur_rates.end())
     {
       return false;
@@ -66,7 +66,7 @@ bool Spotprice::GetEurRates(const LocalDay& day, AreaRateType& eur_rates)
   return true;
 }
 
-bool Spotprice::FetchEurRates(const LocalDay& day)
+bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
 {
   //Remove expired failures
   auto fail_expire_time = std::chrono::system_clock::now() - RETRY_DURATION;
@@ -85,9 +85,9 @@ bool Spotprice::FetchEurRates(const LocalDay& day)
   }
 #endif
 
-  if (m_failmap.find(day.AsULong()) != m_failmap.end()) //Recently failed?
+  if (m_failmap.find(norwegian_day.AsULong()) != m_failmap.end()) //Recently failed?
   {
-    Poco::Logger::get(Logger::DEFAULT).information(std::string("Recently failed fetching spotprice for day ")+day.ToString());
+    Poco::Logger::get(Logger::DEFAULT).information(std::string("Recently failed fetching spotprice for day ")+norwegian_day.ToString());
     return false;
   }
 
@@ -99,7 +99,7 @@ bool Spotprice::FetchEurRates(const LocalDay& day)
     
     for (std::array<Area,5>::size_type area_index=0; area_index<m_areas.size(); area_index++)
     {
-      Poco::URI uri(fmt::sprintf(DAYAHEAD_URL, ::GetApp()->GetConfig(Elspot::ENTSOE_TOKEN_PROPERTY), m_areas[area_index].code, m_areas[area_index].code, day.AsULong(), day.AsULong()));
+      Poco::URI uri(fmt::sprintf(DAYAHEAD_URL, ::GetApp()->GetConfig(Elspot::ENTSOE_TOKEN_PROPERTY), m_areas[area_index].code, m_areas[area_index].code, norwegian_day.AsULong(), norwegian_day.AsULong()));
 
       std::unique_ptr<Poco::Net::HTTPClientSession> session = std::make_unique<Poco::Net::HTTPSClientSession>(uri.getHost(), uri.getPort());
 
@@ -118,7 +118,7 @@ bool Spotprice::FetchEurRates(const LocalDay& day)
       Poco::Net::HTTPResponse res;
       if (Poco::Net::HTTPResponse::HTTP_OK != res.getStatus())
       {
-        return RegisterFail(day);
+        return RegisterFail(norwegian_day);
       }
 
       DayRateType area_prices;
@@ -130,9 +130,9 @@ bool Spotprice::FetchEurRates(const LocalDay& day)
       points = xml_doc->getElementsByTagName("Point");
       if (points->length()<23 || points->length()>25)
       {
-        Poco::Logger::get(Logger::DEFAULT).error(std::string("Spotprice: Didn't get 24 +/- 1 points for ")+day.ToString());
+        Poco::Logger::get(Logger::DEFAULT).error(std::string("Spotprice: Didn't get 24 +/- 1 points for ")+norwegian_day.ToString());
         points->release();
-        return RegisterFail(day);
+        return RegisterFail(norwegian_day);
       }
       
       bool winter_to_summertime = points->length()==23;
@@ -181,9 +181,9 @@ bool Spotprice::FetchEurRates(const LocalDay& day)
       points = nullptr;
     }
 
-    m_eur_rates[day.AsULong()] = area_rates;
+    m_eur_rates[norwegian_day.AsULong()] = area_rates;
     
-    Poco::Logger::get(Logger::DEFAULT).information(std::string("Spotprice: Got all prices for ")+day.ToString());
+    Poco::Logger::get(Logger::DEFAULT).information(std::string("Spotprice: Got all prices for ")+norwegian_day.ToString());
     return true;
   }
   catch (Poco::Exception& ex)
@@ -207,15 +207,15 @@ bool Spotprice::FetchEurRates(const LocalDay& day)
       points->release();
     }
   }
-  return RegisterFail(day);
+  return RegisterFail(norwegian_day);
 }
 
-bool Spotprice::RegisterFail(const LocalDay& day)
+bool Spotprice::RegisterFail(const NorwegianDay& norwegian_day)
 {
   { //Lock scope
     const std::lock_guard<std::mutex> lock(m_failmap_mutex);
 
-    m_failmap.insert({day.AsULong(), std::chrono::system_clock::now()});
+    m_failmap.insert({norwegian_day.AsULong(), std::chrono::system_clock::now()});
   }
   
   return false;

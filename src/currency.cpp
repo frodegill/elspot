@@ -15,10 +15,10 @@
 
 bool Currency::GetCurrentExchangeRate(double& rate)
 {
-  return GetExchangeRate(UTCTime().AsLocalDay(), rate);
+  return GetExchangeRate(UTCTime().AsNorwegianDay(), rate);
 }
 
-bool Currency::GetExchangeRate(const LocalDay& day, double& rate)
+bool Currency::GetExchangeRate(const NorwegianDay& norwegian_day, double& rate)
 {
   std::map<unsigned long, double>::iterator existing_rate;
   
@@ -26,7 +26,7 @@ bool Currency::GetExchangeRate(const LocalDay& day, double& rate)
     const std::lock_guard<std::mutex> lock(m_rates_mutex);
 
     //Already fetched?
-    existing_rate = m_rates.find(day.AsULong());
+    existing_rate = m_rates.find(norwegian_day.AsULong());
     if (existing_rate != m_rates.end())
     {
       rate = existing_rate->second;
@@ -34,11 +34,11 @@ bool Currency::GetExchangeRate(const LocalDay& day, double& rate)
     }
     
     //Fetch rate!
-    if (!FetchEur(day))
+    if (!FetchEur(norwegian_day))
         return false;
 
     //Has it been fetched?
-    existing_rate = m_rates.find(day.AsULong());
+    existing_rate = m_rates.find(norwegian_day.AsULong());
     if (existing_rate == m_rates.end())
     {
       return false;
@@ -50,7 +50,7 @@ bool Currency::GetExchangeRate(const LocalDay& day, double& rate)
   return true;
 }
 
-bool Currency::FetchEur(const LocalDay& day)
+bool Currency::FetchEur(const NorwegianDay& norwegian_day)
 {
   //Remove expired failures
   auto fail_expire_time = std::chrono::system_clock::now() - RETRY_DURATION;
@@ -73,7 +73,7 @@ bool Currency::FetchEur(const LocalDay& day)
     }
 #endif
 
-    if (m_failmap.find(day.AsULong()) != m_failmap.end()) //Recently failed?
+    if (m_failmap.find(norwegian_day.AsULong()) != m_failmap.end()) //Recently failed?
     {
       return false;
     }
@@ -83,10 +83,12 @@ bool Currency::FetchEur(const LocalDay& day)
   {
 #if 1 //Actually fetch exchange rate. There is a limit on free requests per month
     Poco::URI uri;
-    LocalDay today = UTCTime().AsLocalDay();
-    if (day < today)
+    NorwegianDay norwegian_today = UTCTime().AsNorwegianDay();
+    if (norwegian_day < norwegian_today)
     {
-      uri = Poco::URI(fmt::sprintf(EUR_HISTORICAL_URL, day.GetYear(), day.GetMonth(), day.GetDay(), ::GetApp()->GetConfig(Elspot::EXCHANGERATESAPI_TOKEN_PROPERTY)));
+      uri = Poco::URI(fmt::sprintf(EUR_HISTORICAL_URL,
+                                   norwegian_day.GetYear(), norwegian_day.GetMonth(), norwegian_day.GetDay(),
+                                   ::GetApp()->GetConfig(Elspot::EXCHANGERATESAPI_TOKEN_PROPERTY)));
     }
     else
     {
@@ -108,7 +110,7 @@ bool Currency::FetchEur(const LocalDay& day)
     Poco::Net::HTTPResponse res;
     if (Poco::Net::HTTPResponse::HTTP_OK != res.getStatus())
     {
-      return RegisterFail(day);
+      return RegisterFail(norwegian_day);
     }
 
     Poco::JSON::Parser parser;
@@ -116,38 +118,38 @@ bool Currency::FetchEur(const LocalDay& day)
 
     if (!json_root)
     {
-      return RegisterFail(day);
+      return RegisterFail(norwegian_day);
     }
 
     auto object_root = json_root.extract<Poco::JSON::Object::Ptr>();
     if (!object_root)
     {
-      return RegisterFail(day);
+      return RegisterFail(norwegian_day);
     }
 
     std::string base_currency = object_root->getValue<std::string>("base");
     if (0 != base_currency.compare("EUR"))
     {
-      return RegisterFail(day);
+      return RegisterFail(norwegian_day);
     }
 
     Poco::JSON::Object::Ptr rates_object = object_root->getObject("rates");
     if (!rates_object)
     {
-      return RegisterFail(day);
+      return RegisterFail(norwegian_day);
     }
 
     //Remove any old values
 #if 0
-    std::erase_if(m_rates, [day](const auto& item)
+    std::erase_if(m_rates, [norwegian_day](const auto& item)
       {
         auto const& [key, value] = item;
-        return day.DaysAfter(key) > 1;
+        return norwegian_day.DaysAfter(key) > 1;
       });
 #else
     for (std::map<unsigned long, double>::iterator it=m_rates.begin(); it!=m_rates.end(); ++it)
     {
-        if (day.DaysAfter(it->first) > 1)
+        if (norwegian_day.DaysAfter(it->first) > 1)
         {
           m_rates.erase(it);
         }
@@ -155,32 +157,32 @@ bool Currency::FetchEur(const LocalDay& day)
 #endif
 
     double exchange_rate = rates_object->getValue<double>("NOK");
-    m_rates.insert({day.AsULong(), exchange_rate});
+    m_rates.insert({norwegian_day.AsULong(), exchange_rate});
 #else
     Poco::Logger::get(Logger::DEFAULT).information("Currency::FetchEur hardcoding 10.2");
-    m_rates.insert({day.AsULong(), 10.2});
+    m_rates.insert({norwegian_day.AsULong(), 10.2});
 #endif
     return true;
   }
   catch (Poco::Exception& ex)
   {
     Poco::Logger::get(Logger::DEFAULT).error(ex.message());
-    return RegisterFail(day);
+    return RegisterFail(norwegian_day);
   }
   catch (...)
   {
     Poco::Logger::get(Logger::DEFAULT).error("Got currency exception");
-    return RegisterFail(day);
+    return RegisterFail(norwegian_day);
   }
 }
 
-bool Currency::RegisterFail(const LocalDay& day)
+bool Currency::RegisterFail(const NorwegianDay& norwegian_day)
 {
   { //Lock scope
     const std::lock_guard<std::mutex> lock(m_failmap_mutex);
 
-    Poco::Logger::get(Logger::DEFAULT).error(std::string("Fetching exchange rate failed for ")+day.ToString());
-    m_failmap.insert({day.AsULong(), std::chrono::system_clock::now()});
+    Poco::Logger::get(Logger::DEFAULT).error(std::string("Fetching exchange rate failed for ")+norwegian_day.ToString());
+    m_failmap.insert({norwegian_day.AsULong(), std::chrono::system_clock::now()});
   }
   
   return false;

@@ -7,23 +7,23 @@
 void SpotpriceCron::main()
 {
   bool first = true;
-  LocalDay most_recent_today = UTCTime(0).AsLocalDay();
-  LocalDay most_recent_tomorrow = UTCTime(0).AsLocalDay();
+  NorwegianDay most_recent_norwegian_today = UTCTime(0).AsNorwegianDay();
+  NorwegianDay most_recent_norwegian_tomorrow = UTCTime(0).AsNorwegianDay();
 
   while(true)
   {
     UTCTime now;
-    LocalDay today = now.AsLocalDay();
-    LocalDay tomorrow = now.Increment(24*60*60).AsLocalDay();
+    NorwegianDay norwegian_today = now.AsNorwegianDay();
+    NorwegianDay norwegian_tomorrow = now.Increment(24*60*60).AsNorwegianDay();
 
     //If we have not cached today, cache today immediately!!!
-    if (most_recent_today != today)
+    if (most_recent_norwegian_today != norwegian_today)
     {
-      if (::GetApp()->getSpotprice()->CacheEurRates(today) &&
-          ::GetApp()->getMQTT()->GotPrices(today) &&
-          ::GetApp()->getSVG()->GenerateSVGs(today))
+      if (::GetApp()->getSpotprice()->CacheEurRates(norwegian_today) &&
+          ::GetApp()->getMQTT()->GotPrices(norwegian_today) &&
+          ::GetApp()->getSVG()->GenerateSVGs(norwegian_today))
       {
-        most_recent_today = today;
+        most_recent_norwegian_today = norwegian_today;
       }
       else
       {
@@ -36,10 +36,10 @@ void SpotpriceCron::main()
 
     //Wait until at least 1200 UTC (unless caching of today failed. In that case, caching of today should be retried after a short pause)
     UTCTime poll_time;
-    poll_time = poll_time.Increment(poll_time.GetLocalTimezoneOffset()); //Make sure we're at the correct local_day
+    poll_time = poll_time.Increment(poll_time.GetNorwegianTimezoneOffset()); //Make sure we're at the correct norwegian day
     poll_time.SetTime(12, 0, 0);
 
-    if (most_recent_today==today && most_recent_tomorrow!=tomorrow && now<poll_time)
+    if (most_recent_norwegian_today==norwegian_today && most_recent_norwegian_tomorrow!=norwegian_tomorrow && now<poll_time)
     {
       std::this_thread::sleep_until(std::chrono::system_clock::from_time_t(poll_time.AsUTCTimeT()));
     }
@@ -48,7 +48,7 @@ void SpotpriceCron::main()
     now = UTCTime();
     if (now >= poll_time)
     {
-      if (most_recent_today!=today || most_recent_tomorrow!=tomorrow)
+      if (most_recent_norwegian_today!=norwegian_today || most_recent_norwegian_tomorrow!=norwegian_tomorrow)
       {
         if (!first)
         {
@@ -59,7 +59,7 @@ void SpotpriceCron::main()
         }
         
         //If, however unlikely, we have waited until midnight, restart loop iteration to reflect change of day
-        if (UTCTime().AsLocalDay() != today)
+        if (UTCTime().AsNorwegianDay() != norwegian_today)
         {
           Poco::Logger::get(Logger::DEFAULT).information("SpotpriceCron passed midnight");
           continue;
@@ -68,13 +68,13 @@ void SpotpriceCron::main()
         first = false;
         
         //Are we STILL not having todays prices? Keep on trying..
-        if (most_recent_today != today)
+        if (most_recent_norwegian_today != norwegian_today)
         {
-          if (::GetApp()->getSpotprice()->CacheEurRates(today) &&
-              ::GetApp()->getMQTT()->GotPrices(today) &&
-              ::GetApp()->getSVG()->GenerateSVGs(today))
+          if (::GetApp()->getSpotprice()->CacheEurRates(norwegian_today) &&
+              ::GetApp()->getMQTT()->GotPrices(norwegian_today) &&
+              ::GetApp()->getSVG()->GenerateSVGs(norwegian_today))
           {
-            most_recent_today = today;
+            most_recent_norwegian_today = norwegian_today;
           }
           else
           {
@@ -84,25 +84,25 @@ void SpotpriceCron::main()
         
         //And chech if Nordpool has published prices for tomorrow
         now = UTCTime();
-        if (most_recent_tomorrow != tomorrow)
+        if (most_recent_norwegian_tomorrow != norwegian_tomorrow)
         {
-          if (::GetApp()->getSpotprice()->CacheEurRates(tomorrow) &&
-              ::GetApp()->getMQTT()->GotPrices(tomorrow) &&
-              ::GetApp()->getSVG()->GenerateSVGs(tomorrow))
+          if (::GetApp()->getSpotprice()->CacheEurRates(norwegian_tomorrow) &&
+              ::GetApp()->getMQTT()->GotPrices(norwegian_tomorrow) &&
+              ::GetApp()->getSVG()->GenerateSVGs(norwegian_tomorrow))
           {
-            most_recent_tomorrow = tomorrow;
+            most_recent_norwegian_tomorrow = norwegian_tomorrow;
           }
           else
           {
-            Poco::Logger::get(Logger::DEFAULT).error("Caching spotprice for tomorrow failed at " + now.AsLocalTime().ToString());
+            Poco::Logger::get(Logger::DEFAULT).error("Caching spotprice for tomorrow failed at " + now.AsNorwegianTime().ToString());
           }
         }
       }
-      else //Eveything is done for today. Wait until midnight local time (should even work for days with 23 or 25 hours)
+      else //Eveything is done for today. Wait until midnight norwegian time (should even work for days with 23 or 25 hours)
       {
         UTCTime now;
-        LocalTime midnight_localtime = now.AsLocalTime();
-        UTCTime midnight_utc = now.Increment((24-midnight_localtime.GetHour())*60*60);
+        NorwegianTime midnight_norwegiantime = now.AsNorwegianTime();
+        UTCTime midnight_utc = now.Increment((24-midnight_norwegiantime.GetHour())*60*60);
         midnight_utc.SetMinute(0);
         midnight_utc.SetSecond(0);
 

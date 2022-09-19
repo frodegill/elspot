@@ -7,8 +7,8 @@
 #include <time.h>
 
 
-class LocalDay;
-class LocalTime;
+class NorwegianDay;
+class NorwegianTime;
 class UTCTime
 {
 public:
@@ -23,8 +23,8 @@ public:
   [[nodiscard]] bool operator!=(const UTCTime& other) const {return AsUTCTimeT()!=other.AsUTCTimeT();}
   [[nodiscard]] UTCTime Increment(const time_t& seconds);
   [[nodiscard]] UTCTime Decrement(const time_t& seconds) {return Increment(-seconds);}
-  [[nodiscard]] const LocalDay AsLocalDay() const;
-  [[nodiscard]] const LocalTime AsLocalTime() const;
+  [[nodiscard]] const NorwegianDay AsNorwegianDay() const;
+  [[nodiscard]] const NorwegianTime AsNorwegianTime() const;
   [[nodiscard]] time_t AsUTCTimeT() const {return m_time_utc;}
   [[nodiscard]] uint16_t GetYear() const {return m_time_tm_utc.tm_year+1900;}
   [[nodiscard]] uint8_t GetMonth() const {return m_time_tm_utc.tm_mon+1;}
@@ -32,7 +32,7 @@ public:
   [[nodiscard]] uint8_t GetHour() const {return m_time_tm_utc.tm_hour;}
   [[nodiscard]] uint8_t GetMinute() const {return m_time_tm_utc.tm_min;}
   [[nodiscard]] uint8_t GetSecond() const {return m_time_tm_utc.tm_sec;}
-  [[nodiscard]] time_t GetLocalTimezoneOffset();
+  [[nodiscard]] time_t GetNorwegianTimezoneOffset();
 
   void SetTime(uint8_t hour, uint8_t minute, uint8_t second);
   void SetHour(uint8_t hour);
@@ -44,26 +44,26 @@ private:
   struct tm m_time_tm_utc;
 };
 
-class LocalDay
+class NorwegianDay
 {
 friend class UTCTime;
-friend class LocalTime;
+friend class NorwegianTime;
 private:
   static constexpr std::array<const char*, 12> m_months{"januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"};
 private:
-  LocalDay(const struct tm time_tm_localtime);
-  LocalDay(unsigned long as_ulong);
-  LocalDay(uint16_t year, uint8_t month, uint8_t day) : m_year(year), m_month(month), m_day(day) {}
+  NorwegianDay(const struct tm time_tm_norwegiantime);
+  NorwegianDay(unsigned long as_ulong);
+  NorwegianDay(uint16_t year, uint8_t month, uint8_t day) : m_year(year), m_month(month), m_day(day) {}
 public:
-  [[nodiscard]] bool operator<(const LocalDay& other) const {return AsULong()<other.AsULong();}
-  [[nodiscard]] bool operator==(const LocalDay& other) const {return AsULong()==other.AsULong();}
-  [[nodiscard]] bool operator!=(const LocalDay& other) const {return AsULong()!=other.AsULong();}
+  [[nodiscard]] bool operator<(const NorwegianDay& other) const {return AsULong()<other.AsULong();}
+  [[nodiscard]] bool operator==(const NorwegianDay& other) const {return AsULong()==other.AsULong();}
+  [[nodiscard]] bool operator!=(const NorwegianDay& other) const {return AsULong()!=other.AsULong();}
   [[nodiscard]] unsigned long AsULong() const {return (m_year%9999)*10*10*10*10 + (m_month%99)*10*10 + (m_day%99);}
   [[nodiscard]] virtual std::string ToString() const;
   [[nodiscard]] bool IsToday() const;
   [[nodiscard]] bool IsTomorrow() const;
-  [[nodiscard]] signed long DaysAfter(unsigned long other) const {return DaysAfter(LocalDay(other));}
-  [[nodiscard]] signed long DaysAfter(const LocalDay& other) const;
+  [[nodiscard]] signed long DaysAfter(unsigned long other) const {return DaysAfter(NorwegianDay(other));}
+  [[nodiscard]] signed long DaysAfter(const NorwegianDay& other) const;
   [[nodiscard]] uint16_t GetYear() const {return m_year;}
   [[nodiscard]] uint8_t GetMonth() const {return m_month;}
   [[nodiscard]] uint8_t GetDay() const {return m_day;}
@@ -73,11 +73,11 @@ private:
   uint8_t  m_day;
 };
 
-class LocalTime : public LocalDay
+class NorwegianTime : public NorwegianDay
 {
 friend class UTCTime;
 private:
-  LocalTime(const struct tm time_tm_localtime);
+  NorwegianTime(const struct tm time_tm_norwegiantime);
 public:
   [[nodiscard]] uint8_t GetHour() const {return m_hour;}
   [[nodiscard]] uint8_t GetMinute() const {return m_minute;}

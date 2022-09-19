@@ -27,25 +27,25 @@ UTCTime UTCTime::Increment(const time_t& seconds)
   return UTCTime(m_time_utc + seconds);
 }
 
-const LocalDay UTCTime::AsLocalDay() const
+const NorwegianDay UTCTime::AsNorwegianDay() const
 {
-  struct tm time_tm_localtime;
-  localtime_r(&m_time_utc, &time_tm_localtime);
-  return LocalDay(time_tm_localtime);
+  struct tm time_tm_norwegiantime;
+  localtime_r(&m_time_utc, &time_tm_norwegiantime);
+  return NorwegianDay(time_tm_norwegiantime);
 }
 
-const LocalTime UTCTime::AsLocalTime() const
+const NorwegianTime UTCTime::AsNorwegianTime() const
 {
-  struct tm time_tm_localtime;
-  localtime_r(&m_time_utc, &time_tm_localtime);
-  return LocalTime(time_tm_localtime);
+  struct tm time_tm_norwegiantime;
+  localtime_r(&m_time_utc, &time_tm_norwegiantime);
+  return NorwegianTime(time_tm_norwegiantime);
 }
 
-time_t UTCTime::GetLocalTimezoneOffset()
+time_t UTCTime::GetNorwegianTimezoneOffset()
 {
-  struct tm time_tm_localtime;
-  localtime_r(&m_time_utc, &time_tm_localtime);
-  return time_tm_localtime.tm_gmtoff;
+  struct tm time_tm_norwegiantime;
+  localtime_r(&m_time_utc, &time_tm_norwegiantime);
+  return time_tm_norwegiantime.tm_gmtoff;
 }
 
 void UTCTime::SetTime(uint8_t hour, uint8_t minute, uint8_t second)
@@ -75,14 +75,14 @@ void UTCTime::SetSecond(uint8_t second)
 }
 
 
-LocalDay::LocalDay(const struct tm time_tm_localtime) :
-  m_year(time_tm_localtime.tm_year+1900),
-  m_month(time_tm_localtime.tm_mon+1),
-  m_day(time_tm_localtime.tm_mday)
+NorwegianDay::NorwegianDay(const struct tm time_tm_norwegiantime) :
+  m_year(time_tm_norwegiantime.tm_year+1900),
+  m_month(time_tm_norwegiantime.tm_mon+1),
+  m_day(time_tm_norwegiantime.tm_mday)
 {
 }
 
-LocalDay::LocalDay(unsigned long as_ulong)
+NorwegianDay::NorwegianDay(unsigned long as_ulong)
 {
   m_day = as_ulong%100;
   as_ulong = (as_ulong - m_day) / 100;
@@ -91,25 +91,25 @@ LocalDay::LocalDay(unsigned long as_ulong)
   m_year = as_ulong;
 }
 
-std::string LocalDay::ToString() const
+std::string NorwegianDay::ToString() const
 {
   return fmt::sprintf("%u.%s %u", GetDay()%99, m_months[GetMonth()-1], GetYear()%9999);
 }
 
-bool LocalDay::IsToday() const
+bool NorwegianDay::IsToday() const
 {
-  LocalDay today = UTCTime().AsLocalDay();
+  NorwegianDay today = UTCTime().AsNorwegianDay();
   return AsULong() == today.AsULong();
 }
 
-bool LocalDay::IsTomorrow() const
+bool NorwegianDay::IsTomorrow() const
 {
   UTCTime today = UTCTime();
-  LocalDay tomorrow = today.Increment(24*60*60).AsLocalDay();
+  NorwegianDay tomorrow = today.Increment(24*60*60).AsNorwegianDay();
   return AsULong() == tomorrow.AsULong();
 }
 
-signed long LocalDay::DaysAfter(const LocalDay& other) const
+signed long NorwegianDay::DaysAfter(const NorwegianDay& other) const
 {
   std::tm t;
   t.tm_year = GetYear() - 1900;
@@ -139,15 +139,15 @@ signed long LocalDay::DaysAfter(const LocalDay& other) const
 }
 
 
-LocalTime::LocalTime(const struct tm time_tm_localtime) :
-  LocalDay(time_tm_localtime),
-  m_hour(time_tm_localtime.tm_hour),
-  m_minute(time_tm_localtime.tm_min),
-  m_second(time_tm_localtime.tm_sec)
+NorwegianTime::NorwegianTime(const struct tm time_tm_norwegiantime) :
+  NorwegianDay(time_tm_norwegiantime),
+  m_hour(time_tm_norwegiantime.tm_hour),
+  m_minute(time_tm_norwegiantime.tm_min),
+  m_second(time_tm_norwegiantime.tm_sec)
 {
 }
 
-std::string LocalTime::ToString() const
+std::string NorwegianTime::ToString() const
 {
   return fmt::sprintf("%02u:%02u.%02u %u.%s %u", GetHour()%99, GetMinute()%99, GetSecond()%99, GetDay()%99, m_months[GetMonth()-1], GetYear()%9999);
 }
