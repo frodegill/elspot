@@ -14,6 +14,50 @@ TEST(TestDay, EpochTest) {
   EXPECT_EQ(utc_time.GetNorwegianTimezoneOffset(), 3600);
 }
 
+TEST(TestDay, SpringNoDSTTest) {
+  UTCTime utc_time(1648342799L);
+  EXPECT_EQ(utc_time.GetYear(), 2022);
+  EXPECT_EQ(utc_time.GetMonth(), 3);
+  EXPECT_EQ(utc_time.GetDay(), 27);
+  EXPECT_EQ(utc_time.GetHour(), 0);
+  EXPECT_EQ(utc_time.GetMinute(), 59);
+  EXPECT_EQ(utc_time.GetSecond(), 59);
+  EXPECT_EQ(utc_time.GetNorwegianTimezoneOffset(), 3600);
+}
+
+TEST(TestDay, SpringDSTTest) {
+  UTCTime utc_time(1648342800L);
+  EXPECT_EQ(utc_time.GetYear(), 2022);
+  EXPECT_EQ(utc_time.GetMonth(), 3);
+  EXPECT_EQ(utc_time.GetDay(), 27);
+  EXPECT_EQ(utc_time.GetHour(), 1);
+  EXPECT_EQ(utc_time.GetMinute(), 0);
+  EXPECT_EQ(utc_time.GetSecond(), 0);
+  EXPECT_EQ(utc_time.GetNorwegianTimezoneOffset(), 7200);
+}
+
+TEST(TestDay, AutumnDSTTest) {
+  UTCTime utc_time(1667091599L);
+  EXPECT_EQ(utc_time.GetYear(), 2022);
+  EXPECT_EQ(utc_time.GetMonth(), 10);
+  EXPECT_EQ(utc_time.GetDay(), 30);
+  EXPECT_EQ(utc_time.GetHour(), 0);
+  EXPECT_EQ(utc_time.GetMinute(), 59);
+  EXPECT_EQ(utc_time.GetSecond(), 59);
+  EXPECT_EQ(utc_time.GetNorwegianTimezoneOffset(), 7200);
+}
+
+TEST(TestDay, AutumnNoDSTTest) {
+  UTCTime utc_time(1667091600L);
+  EXPECT_EQ(utc_time.GetYear(), 2022);
+  EXPECT_EQ(utc_time.GetMonth(), 10);
+  EXPECT_EQ(utc_time.GetDay(), 30);
+  EXPECT_EQ(utc_time.GetHour(), 1);
+  EXPECT_EQ(utc_time.GetMinute(), 0);
+  EXPECT_EQ(utc_time.GetSecond(), 0);
+  EXPECT_EQ(utc_time.GetNorwegianTimezoneOffset(), 3600);
+}
+
 /*
  * class LocalDay;
 class LocalTime;

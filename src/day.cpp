@@ -19,7 +19,7 @@ UTCTime::UTCTime(const time_t& time)
 void UTCTime::Initialize(const time_t& time)
 {
   m_time_utc = time;
-  gmtime_r(&m_time_utc, &m_time_tm_utc);
+  ::gmtime_r(&m_time_utc, &m_time_tm_utc);
 }
 
 UTCTime UTCTime::Increment(const time_t& seconds)
@@ -43,9 +43,41 @@ const NorwegianTime UTCTime::AsNorwegianTime() const
 
 time_t UTCTime::GetNorwegianTimezoneOffset()
 {
-  struct tm time_tm_norwegiantime;
-  localtime_r(&m_time_utc, &time_tm_norwegiantime);
-  return time_tm_norwegiantime.tm_gmtoff;
+  if (GetMonth()<3 || GetMonth()>10)
+  {
+    return 3600;
+  }
+
+  if (GetMonth()>3 && GetMonth()<10)
+  {
+    return 7200;
+  }
+
+  //From unix/time.c
+  {
+    constexpr short monthbegin[12] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
+    time_t t = monthbegin[GetMonth()-1] // full months
+              + GetDay()-1 // full days
+              + (!(GetYear() & 3) && (GetMonth()-1) > 1); // leap day this year
+    t += 365 * (GetYear() - 1970) // full years
+        + (GetYear() - 1969)/4; // past leap days
+    m_time_tm_utc.tm_wday = (t + 3) % 7;
+  }
+
+  int first_of_month_wday = ((m_time_tm_utc.tm_wday - (GetDay()-1)) % 7 + 7) % 7;
+  int last_sunday_of_month = (first_of_month_wday<=3) ? 28-first_of_month_wday : 35-first_of_month_wday;
+
+  if (GetMonth()==3 && (GetDay()<last_sunday_of_month || (GetDay()==last_sunday_of_month && GetHour()<1)))
+  {
+    return 3600;
+  }
+
+  if (GetMonth()==10 && (GetDay()>last_sunday_of_month || (GetDay()==last_sunday_of_month && GetHour()>=1)))
+  {
+    return 3600;
+  }
+
+  return 7200;
 }
 
 void UTCTime::SetTime(uint8_t hour, uint8_t minute, uint8_t second)
@@ -53,25 +85,25 @@ void UTCTime::SetTime(uint8_t hour, uint8_t minute, uint8_t second)
   m_time_utc += (hour - m_time_tm_utc.tm_hour)*60*60;
   m_time_utc += (minute - m_time_tm_utc.tm_min)*60;
   m_time_utc += (second - m_time_tm_utc.tm_sec);
-  gmtime_r(&m_time_utc, &m_time_tm_utc);
+  ::gmtime_r(&m_time_utc, &m_time_tm_utc);
 }
 
 void UTCTime::SetHour(uint8_t hour)
 {
   m_time_utc += (hour - m_time_tm_utc.tm_hour)*60*60;
-  gmtime_r(&m_time_utc, &m_time_tm_utc);
+  ::gmtime_r(&m_time_utc, &m_time_tm_utc);
 }
 
 void UTCTime::SetMinute(uint8_t minute)
 {
   m_time_utc += (minute - m_time_tm_utc.tm_min)*60;
-  gmtime_r(&m_time_utc, &m_time_tm_utc);
+  ::gmtime_r(&m_time_utc, &m_time_tm_utc);
 }
 
 void UTCTime::SetSecond(uint8_t second)
 {
   m_time_utc += (second - m_time_tm_utc.tm_sec);
-  gmtime_r(&m_time_utc, &m_time_tm_utc);
+  ::gmtime_r(&m_time_utc, &m_time_tm_utc);
 }
 
 
