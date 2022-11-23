@@ -18,7 +18,7 @@ WX_CONFIG := wx-config
  WX_CONFIG += --version=$(WXWIDGETS_VERSION)
 #endif
 CXX = g++
-CXXFLAGS = -I/usr/local/include -I/usr/include -W -Wall -Werror -pipe -std=c++2a
+CXXFLAGS = -I/usr/local/include -I/usr/include -W -Wall -Werror -Wextra -Wconversion -pipe -std=c++2a
 LIBSFLAGS = -L/usr/local/library -L/usr/local/lib -L/usr/local/lib/x86_64 -lpthread -lpaho-mqtt3as -lpaho-mqttpp3 -lfmt
 
 ifdef DEBUG_INFO
