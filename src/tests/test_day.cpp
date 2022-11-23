@@ -58,78 +58,79 @@ TEST(TestDay, AutumnNoDSTTest) {
   EXPECT_EQ(utc_time.GetNorwegianTimezoneOffset(), 3600);
 }
 
+TEST(TestDay, Xmas2022Test) {
+  UTCTime utc_time(1672444800L);
+  EXPECT_EQ(utc_time.AsNorwegianDay().ToString(), "31.desember 2022");
+
+  utc_time.SetTime(12, 15, 50);
+  EXPECT_EQ(utc_time.AsNorwegianTime().ToString(), "13:15.50 31.desember 2022");
+
+  utc_time.SetHour(22);
+  utc_time.SetMinute(59);
+  EXPECT_EQ(utc_time.AsNorwegianTime().ToString(), "23:59.50 31.desember 2022");
+
+  utc_time = utc_time.IncrementSecondsCopy(15);
+  EXPECT_EQ(utc_time.AsNorwegianTime().ToString(), "00:00.05 1.januar 2023");
+
+  utc_time = utc_time.DecrementSecondsCopy(10);
+  EXPECT_EQ(utc_time.AsNorwegianTime().ToString(), "23:59.55 31.desember 2022");
+}
+
+TEST(TestDay, UTCTimeEqualityTest) {
+  UTCTime utc_time1(1672444800L);
+  UTCTime utc_time2 = utc_time1.IncrementSecondsCopy(100);
+  UTCTime utc_time3 = utc_time1.IncrementSecondsCopy(100);
+
+  EXPECT_EQ(utc_time1<utc_time2, true);
+  EXPECT_EQ(utc_time2<utc_time3, false);
+
+  EXPECT_EQ(utc_time1==utc_time2, false);
+  EXPECT_EQ(utc_time2==utc_time3, true);
+
+  EXPECT_EQ(utc_time1>=utc_time2, false);
+  EXPECT_EQ(utc_time2>=utc_time3, true);
+
+  EXPECT_EQ(utc_time1!=utc_time2, true);
+  EXPECT_EQ(utc_time2!=utc_time3, false);
+}
+
+TEST(TestDay, NorwegianDayTest) {
+  UTCTime utc_time(1672444800L);
+  NorwegianDay norwegian_day = utc_time.AsNorwegianDay();
+  EXPECT_EQ(norwegian_day.AsULong(), 20221231);
+  EXPECT_EQ(norwegian_day.GetYear(), 2022);
+  EXPECT_EQ(norwegian_day.GetMonth(), 12);
+  EXPECT_EQ(norwegian_day.GetDay(), 31);
+}
+
+TEST(TestDay, TodayTomorrowTest) {
+  UTCTime now;
+  EXPECT_EQ(now.AsNorwegianDay().IsToday(), true);
+
+  UTCTime tomorrow = now.IncrementNorwegianDaysCopy(1);
+  EXPECT_EQ(tomorrow.AsNorwegianDay().IsTomorrow(), true);
+}
+
+TEST(TestDay, DaysAfterTest) {
+  UTCTime now;
+  UTCTime four_weeks_ago = now.DecrementNorwegianDaysCopy(14);
+  UTCTime in_four_weeks = now.IncrementNorwegianDaysCopy(14);
+  EXPECT_EQ(now.AsNorwegianDay().DaysAfter(four_weeks_ago.AsNorwegianDay().AsULong()), 14);
+  EXPECT_EQ(now.AsNorwegianDay().DaysAfter(four_weeks_ago.AsNorwegianDay()), 14);
+  EXPECT_EQ(now.AsNorwegianDay().DaysAfter(in_four_weeks.AsNorwegianDay().AsULong()), -14);
+  EXPECT_EQ(now.AsNorwegianDay().DaysAfter(in_four_weeks.AsNorwegianDay()), -14);
+}
+
+
 /*
- * class LocalDay;
-class LocalTime;
-class UTCTime
-{
-public:
-  UTCTime();
-  UTCTime(const time_t& time);
-private:
-  void Initialize(const time_t& time);
-public:
-  [[nodiscard]] bool operator<(const UTCTime& other) const {return AsUTCTimeT()<other.AsUTCTimeT();}
-  [[nodiscard]] bool operator==(const UTCTime& other) const {return AsUTCTimeT()==other.AsUTCTimeT();}
-  [[nodiscard]] bool operator>=(const UTCTime& other) const {return AsUTCTimeT()>=other.AsUTCTimeT();}
-  [[nodiscard]] bool operator!=(const UTCTime& other) const {return AsUTCTimeT()!=other.AsUTCTimeT();}
-  [[nodiscard]] UTCTime Increment(const time_t& seconds);
-  [[nodiscard]] UTCTime Decrement(const time_t& seconds) {return Increment(-seconds);}
-  [[nodiscard]] const LocalDay AsLocalDay() const;
-  [[nodiscard]] const LocalTime AsLocalTime() const;
-  [[nodiscard]] time_t AsUTCTimeT() const {return m_time_utc;}
-  [[nodiscard]] uint16_t GetYear() const {return m_time_tm_utc.tm_year+1900;}
-  [[nodiscard]] uint8_t GetMonth() const {return m_time_tm_utc.tm_mon+1;}
-  [[nodiscard]] uint8_t GetDay() const {return m_time_tm_utc.tm_mday;}
-  [[nodiscard]] uint8_t GetHour() const {return m_time_tm_utc.tm_hour;}
-  [[nodiscard]] uint8_t GetMinute() const {return m_time_tm_utc.tm_min;}
-  [[nodiscard]] uint8_t GetSecond() const {return m_time_tm_utc.tm_sec;}
-  [[nodiscard]] time_t GetLocalTimezoneOffset();
+  [[nodiscard]] signed long DaysAfter(unsigned long other) const {return DaysAfter(NorwegianDay(other));}
+  [[nodiscard]] signed long DaysAfter(const NorwegianDay& other) const;
 
-  void SetTime(uint8_t hour, uint8_t minute, uint8_t second);
-  void SetHour(uint8_t hour);
-  void SetMinute(uint8_t minute);
-  void SetSecond(uint8_t second);
-
-private:
-  time_t m_time_utc;
-  struct tm m_time_tm_utc;
-};
-
-class LocalDay
-{
-friend class UTCTime;
-friend class LocalTime;
-private:
-  static constexpr std::array<const char*, 12> m_months{"januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"};
-private:
-  LocalDay(const struct tm time_tm_localtime);
-  LocalDay(unsigned long as_ulong);
-  LocalDay(uint16_t year, uint8_t month, uint8_t day) : m_year(year), m_month(month), m_day(day) {}
-public:
-  [[nodiscard]] bool operator<(const LocalDay& other) const {return AsULong()<other.AsULong();}
-  [[nodiscard]] bool operator==(const LocalDay& other) const {return AsULong()==other.AsULong();}
-  [[nodiscard]] bool operator!=(const LocalDay& other) const {return AsULong()!=other.AsULong();}
-  [[nodiscard]] unsigned long AsULong() const {return (m_year%9999)*10*10*10*10 + (m_month%99)*10*10 + (m_day%99);}
-  [[nodiscard]] virtual std::string ToString() const;
-  [[nodiscard]] bool IsToday() const;
-  [[nodiscard]] bool IsTomorrow() const;
-  [[nodiscard]] signed long DaysAfter(unsigned long other) const {return DaysAfter(LocalDay(other));}
-  [[nodiscard]] signed long DaysAfter(const LocalDay& other) const;
-  [[nodiscard]] uint16_t GetYear() const {return m_year;}
-  [[nodiscard]] uint8_t GetMonth() const {return m_month;}
-  [[nodiscard]] uint8_t GetDay() const {return m_day;}
-private:
-  uint16_t m_year;
-  uint8_t  m_month;
-  uint8_t  m_day;
-};
-
-class LocalTime : public LocalDay
+class NorwegianTime : public NorwegianDay
 {
 friend class UTCTime;
 private:
-  LocalTime(const struct tm time_tm_localtime);
+  NorwegianTime(const struct tm time_tm_norwegiantime);
 public:
   [[nodiscard]] uint8_t GetHour() const {return m_hour;}
   [[nodiscard]] uint8_t GetMinute() const {return m_minute;}

@@ -14,7 +14,7 @@ void SpotpriceCron::main()
   {
     UTCTime now;
     NorwegianDay norwegian_today = now.AsNorwegianDay();
-    NorwegianDay norwegian_tomorrow = now.Increment(24*60*60).AsNorwegianDay();
+    NorwegianDay norwegian_tomorrow = now.IncrementNorwegianDaysCopy(1).AsNorwegianDay();
 
     //If we have not cached today, cache today immediately!!!
     if (most_recent_norwegian_today != norwegian_today)
@@ -36,7 +36,7 @@ void SpotpriceCron::main()
 
     //Wait until at least 1200 UTC (unless caching of today failed. In that case, caching of today should be retried after a short pause)
     UTCTime poll_time;
-    poll_time = poll_time.Increment(poll_time.GetNorwegianTimezoneOffset()); //Make sure we're at the correct norwegian day
+    poll_time = poll_time.IncrementSecondsCopy(poll_time.GetNorwegianTimezoneOffset()); //Make sure we're at the correct norwegian day
     poll_time.SetTime(12, 0, 0);
 
     if (most_recent_norwegian_today==norwegian_today && most_recent_norwegian_tomorrow!=norwegian_tomorrow && now<poll_time)
@@ -52,7 +52,7 @@ void SpotpriceCron::main()
       {
         if (!first)
         {
-          poll_time = UTCTime().Increment(20*60);
+          poll_time = UTCTime().IncrementSecondsCopy(20*60);
           poll_time.SetMinute((poll_time.GetMinute()/20)*20); //Integer division to round down to 00|20|40
           poll_time.SetSecond(0);
           std::this_thread::sleep_until(std::chrono::system_clock::from_time_t(poll_time.AsUTCTimeT()));
@@ -102,7 +102,7 @@ void SpotpriceCron::main()
       {
         UTCTime now;
         NorwegianTime midnight_norwegiantime = now.AsNorwegianTime();
-        UTCTime midnight_utc = now.Increment((24-midnight_norwegiantime.GetHour())*60*60);
+        UTCTime midnight_utc = now.IncrementHoursCopy(24 - midnight_norwegiantime.GetHour());
         midnight_utc.SetMinute(0);
         midnight_utc.SetSecond(0);
 

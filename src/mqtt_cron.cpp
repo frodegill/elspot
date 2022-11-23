@@ -12,7 +12,7 @@ void MQTTCron::main()
     UTCTime this_hour;
     this_hour.SetMinute(0);
     this_hour.SetSecond(0);
-    UTCTime next_hour = this_hour.Increment(60*60);
+    UTCTime next_hour = this_hour.IncrementHoursCopy(1);
     std::this_thread::sleep_until(std::chrono::system_clock::from_time_t(next_hour.AsUTCTimeT()));
     
     //Publish this hour spotprices (and retry after 5 minutes if it fails. (Give up after 50 minutes of retrying..)

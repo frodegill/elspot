@@ -84,7 +84,7 @@ bool SVG::GenerateSVG(const std::string& svg_template, const NorwegianDay& norwe
     }
   }
   double delta_rate = max_rate - min_rate;
-  int precision = 3 - ((delta_rate == 0) ? 0 : ::log10(delta_rate));
+  int precision = 3 - ((delta_rate == 0) ? 0 : static_cast<int>(::log10(delta_rate)));
 
   static constexpr const int grid_steps = 6;
   double ygrid_max = dceil(max_rate, precision-1);
