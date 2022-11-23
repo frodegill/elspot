@@ -58,7 +58,7 @@ jobs:
       run: cd && git clone https://github.com/eclipse/paho.mqtt.cpp.git && cd paho.mqtt.cpp && cmake -Bbuild -H. -DPAHO_WITH_SSL=ON -DPAHO_BUILD_DOCUMENTATION=TRUE && sudo cmake --build build/ --target install && sudo ldconfig
 
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Compile project
       run: make && make install
