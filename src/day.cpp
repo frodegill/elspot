@@ -128,8 +128,8 @@ void UTCTime::SetSecond(uint8_t second)
 
 
 NorwegianDay::NorwegianDay(const std::tm time_tm_norwegiantime) :
-  m_year(static_cast<uint16_t>(time_tm_norwegiantime.tm_year)+1900),
-  m_month(static_cast<uint8_t>(time_tm_norwegiantime.tm_mon)+1),
+  m_year(static_cast<uint16_t>(time_tm_norwegiantime.tm_year+1900)),
+  m_month(static_cast<uint8_t>(time_tm_norwegiantime.tm_mon+1)),
   m_day(static_cast<uint8_t>(time_tm_norwegiantime.tm_mday))
 {
 }
