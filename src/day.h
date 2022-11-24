@@ -31,8 +31,8 @@ public:
   [[nodiscard]] const NorwegianDay AsNorwegianDay() const;
   [[nodiscard]] const NorwegianTime AsNorwegianTime() const;
   [[nodiscard]] std::time_t AsUTCTimeT() const {return m_time_utc;}
-  [[nodiscard]] uint16_t GetYear() const {return static_cast<uint16_t>(m_time_tm_utc.tm_year)+1900;}
-  [[nodiscard]] uint8_t GetMonth() const {return static_cast<uint8_t>(m_time_tm_utc.tm_mon)+1;}
+  [[nodiscard]] uint16_t GetYear() const {return static_cast<uint16_t>(m_time_tm_utc.tm_year+1900);}
+  [[nodiscard]] uint8_t GetMonth() const {return static_cast<uint8_t>(m_time_tm_utc.tm_mon+1);}
   [[nodiscard]] uint8_t GetDay() const {return static_cast<uint8_t>(m_time_tm_utc.tm_mday);}
   [[nodiscard]] uint8_t GetHour() const {return static_cast<uint8_t>(m_time_tm_utc.tm_hour);}
   [[nodiscard]] uint8_t GetMinute() const {return static_cast<uint8_t>(m_time_tm_utc.tm_min);}
