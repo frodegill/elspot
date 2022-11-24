@@ -36,14 +36,16 @@ UTCTime UTCTime::IncrementNorwegianDaysCopy(const std::time_t& days) const
 const NorwegianDay UTCTime::AsNorwegianDay() const
 {
   std::tm time_tm_norwegiantime;
-  localtime_r(&m_time_utc, &time_tm_norwegiantime);
+  time_t norwegiantime = m_time_utc+GetNorwegianTimezoneOffset();
+  ::gmtime_r(&norwegiantime, &time_tm_norwegiantime);
   return NorwegianDay(time_tm_norwegiantime);
 }
 
 const NorwegianTime UTCTime::AsNorwegianTime() const
 {
   std::tm time_tm_norwegiantime;
-  localtime_r(&m_time_utc, &time_tm_norwegiantime);
+  time_t norwegiantime = m_time_utc+GetNorwegianTimezoneOffset();
+  ::gmtime_r(&norwegiantime, &time_tm_norwegiantime);
   return NorwegianTime(time_tm_norwegiantime);
 }
 
