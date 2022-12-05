@@ -18,8 +18,8 @@ WX_CONFIG := wx-config
  WX_CONFIG += --version=$(WXWIDGETS_VERSION)
 #endif
 CXX = g++
-CXXFLAGS = -I/usr/local/include -I/usr/include -W -Wall -Werror -pipe -std=c++2a
-LIBSFLAGS = -L/usr/local/library -L/usr/local/lib -L/usr/local/lib/x86_64 -lgtest -lgtest_main -lpthread -lpaho-mqtt3as -lpaho-mqttpp3 -lfmt
+CXXFLAGS = --coverage -I/usr/local/include -I/usr/include -W -Wall -Werror -pipe -std=c++2a
+LIBSFLAGS = --coverage -L/usr/local/library -L/usr/local/lib -L/usr/local/lib/x86_64 -lgtest -lgtest_main -lpthread -lpaho-mqtt3as -lpaho-mqttpp3 -lfmt
 
 ifdef DEBUG_INFO
  CXXFLAGS += -g
@@ -48,7 +48,14 @@ endif
 ################### Clean ######################
 clean:
 	find . -name '*~' -delete
-	-rm -f $(PROGRAM) $(OBJECTS) $(DEPS)
+	find . -name '*.gcda' -delete
+	find . -name '*.gcno' -delete
+	-rm -rf $(PROGRAM) $(OBJECTS) $(DEPS) coverage.info coverage/
 
 install:
 	strip -s $(PROGRAM)
+
+coverage:
+	./${PROGRAM}
+	lcov --capture --directory . --output-file coverage.info
+	genhtml coverage.info --output-directory coverage

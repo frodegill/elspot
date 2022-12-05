@@ -65,15 +65,19 @@ TEST(TestDay, Xmas2022Test) {
   utc_time.SetTime(12, 15, 50);
   EXPECT_EQ(utc_time.AsNorwegianTime().ToString(), "13:15.50 31.desember 2022");
 
-  utc_time.SetHour(22);
+  utc_time.SetHour(21);
   utc_time.SetMinute(59);
-  EXPECT_EQ(utc_time.AsNorwegianTime().ToString(), "23:59.50 31.desember 2022");
+  utc_time.SetSecond(52);
+  EXPECT_EQ(utc_time.AsNorwegianTime().ToString(), "22:59.52 31.desember 2022");
+
+  utc_time = utc_time.IncrementHoursCopy(1);
+  EXPECT_EQ(utc_time.AsNorwegianTime().ToString(), "23:59.52 31.desember 2022");
 
   utc_time = utc_time.IncrementSecondsCopy(15);
-  EXPECT_EQ(utc_time.AsNorwegianTime().ToString(), "00:00.05 1.januar 2023");
+  EXPECT_EQ(utc_time.AsNorwegianTime().ToString(), "00:00.07 1.januar 2023");
 
   utc_time = utc_time.DecrementSecondsCopy(10);
-  EXPECT_EQ(utc_time.AsNorwegianTime().ToString(), "23:59.55 31.desember 2022");
+  EXPECT_EQ(utc_time.AsNorwegianTime().ToString(), "23:59.57 31.desember 2022");
 }
 
 TEST(TestDay, UTCTimeEqualityTest) {
@@ -119,27 +123,7 @@ TEST(TestDay, DaysAfterTest) {
   EXPECT_EQ(now.AsNorwegianDay().DaysAfter(four_weeks_ago.AsNorwegianDay()), 14);
   EXPECT_EQ(now.AsNorwegianDay().DaysAfter(in_four_weeks.AsNorwegianDay().AsULong()), -14);
   EXPECT_EQ(now.AsNorwegianDay().DaysAfter(in_four_weeks.AsNorwegianDay()), -14);
+  EXPECT_FALSE(now.AsNorwegianDay() < four_weeks_ago.AsNorwegianDay());
+  EXPECT_TRUE(four_weeks_ago.AsNorwegianDay() != in_four_weeks.AsNorwegianDay());
+  EXPECT_FALSE(now.AsNorwegianDay() == four_weeks_ago.AsNorwegianDay());
 }
-
-
-/*
-  [[nodiscard]] signed long DaysAfter(unsigned long other) const {return DaysAfter(NorwegianDay(other));}
-  [[nodiscard]] signed long DaysAfter(const NorwegianDay& other) const;
-
-class NorwegianTime : public NorwegianDay
-{
-friend class UTCTime;
-private:
-  NorwegianTime(const struct tm time_tm_norwegiantime);
-public:
-  [[nodiscard]] uint8_t GetHour() const {return m_hour;}
-  [[nodiscard]] uint8_t GetMinute() const {return m_minute;}
-  [[nodiscard]] uint8_t GetSecond() const {return m_second;}
-  [[nodiscard]] std::string ToString() const override;
-private:
-  uint8_t  m_hour;
-  uint8_t  m_minute;
-  uint8_t  m_second;
-};
-
- */

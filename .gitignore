@@ -1,3 +1,10 @@
+elspot
+elspot-tests
 *.o
 *.dep
-
+*.gcda
+*.gcno
+coverage/
+coverage.info
+.kdev4/
+*.kdev4

@@ -48,7 +48,9 @@ endif
 ################### Clean ######################
 clean:
 	find . -name '*~' -delete
-	-rm -f $(PROGRAM) $(OBJECTS) $(DEPS)
+	find . -name '*.gcda' -delete
+	find . -name '*.gcno' -delete
+	-rm -rf $(PROGRAM) $(OBJECTS) $(DEPS) coverage.info coverage/
 
 install:
 	strip -s $(PROGRAM)
