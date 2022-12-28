@@ -21,6 +21,9 @@ struct Area
 
 class Spotprice
 {
+public:
+  virtual ~Spotprice() = default;
+
 private:
   static constexpr std::chrono::minutes RETRY_DURATION = std::chrono::minutes(10);
   static constexpr const char* DAYAHEAD_URL = "https://transparency.entsoe.eu/api?securityToken=%s&documentType=A44&in_Domain=%s&out_Domain=%s&periodStart=%08lu1200&periodEnd=%08lu1300"; //Ask for only one hour mid-day. We will get entire day
@@ -39,13 +42,13 @@ public:
     typedef std::array<DayRateType,m_areas.size()> AreaRateType;
 
 public:
-  [[nodiscard]] bool HasEurRate(const NorwegianDay& norwegian_day);
-  [[nodiscard]] bool CacheEurRates(const NorwegianDay& norwegian_day);
-  [[nodiscard]] bool GetEurRates(const NorwegianDay& norwegian_day, AreaRateType& eur_rates);
+  [[nodiscard]] virtual bool HasEurRate(const NorwegianDay& norwegian_day);
+  [[nodiscard]] virtual bool CacheEurRates(const NorwegianDay& norwegian_day);
+  [[nodiscard]] virtual bool GetEurRates(const NorwegianDay& norwegian_day, AreaRateType& eur_rates);
   
 private:
-  [[nodiscard]] bool FetchEurRates(const NorwegianDay& norwegian_day); //Not thread-safe funtion. Call from within locked m_eur_rates_mutex
-  [[nodiscard]] bool RegisterFail(const NorwegianDay& norwegian_day);
+  [[nodiscard]] virtual bool FetchEurRates(const NorwegianDay& norwegian_day); //Not thread-safe funtion. Call from within locked m_eur_rates_mutex
+  [[nodiscard]] virtual bool RegisterFail(const NorwegianDay& norwegian_day);
 
 private:
   std::map<unsigned long, AreaRateType> m_eur_rates;

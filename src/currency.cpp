@@ -5,10 +5,6 @@
 #include <fmt/printf.h>
 
 #include <Poco/JSON/Parser.h>
-#include <Poco/Net/HTTPClientSession.h>
-#include <Poco/Net/HTTPRequest.h>
-#include <Poco/Net/HTTPResponse.h>
-#include <Poco/URI.h>
 
 #include "application.h"
 
@@ -94,27 +90,22 @@ bool Currency::FetchEur(const NorwegianDay& norwegian_day)
     {
       uri = Poco::URI(fmt::sprintf(EUR_LATEST_URL, ::GetApp()->GetConfig(Elspot::EXCHANGERATESAPI_TOKEN_PROPERTY)));
     }
-    std::unique_ptr<Poco::Net::HTTPClientSession> session = std::make_unique<Poco::Net::HTTPClientSession>(uri.getHost(), uri.getPort());
 
-    // prepare path
-    std::string path(uri.getPathAndQuery());
-    if (path.empty())
-      path = "/";
+    const std::shared_ptr<Networking> networking = ::GetApp()->GetNetworking();
+    if (!networking.get())
+    {
+      return false;
+    }
+    std::unique_ptr<Poco::Net::HTTPSClientSession> session = networking->CreateSession(uri);
+    networking->CallGET(session, uri, "application/json");
 
-    // send request
-    Poco::Net::HTTPRequest req(Poco::Net::HTTPRequest::HTTP_GET, path, Poco::Net::HTTPMessage::HTTP_1_1);
-    session->setKeepAliveTimeout(Poco::Timespan(30, 0));
-    session->sendRequest(req);
-
-    // get response
     Poco::Net::HTTPResponse res;
+    Poco::JSON::Parser parser;
+    auto json_root = parser.parse(session->receiveResponse(res));
     if (Poco::Net::HTTPResponse::HTTP_OK != res.getStatus())
     {
       return RegisterFail(norwegian_day);
     }
-
-    Poco::JSON::Parser parser;
-    auto json_root = parser.parse(session->receiveResponse(res));
 
     if (!json_root)
     {

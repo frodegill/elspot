@@ -6,7 +6,8 @@
 #include <Poco/PatternFormatter.h>
 
 
-Poco::AutoPtr<Elspot> g_application;
+Poco::AutoPtr<Elspot> g_application = nullptr;
+void SetApp(const Poco::AutoPtr<Elspot> application) {g_application = application;}
 Elspot* GetApp() {return g_application;}
 
 
@@ -17,13 +18,14 @@ Elspot::Elspot()
 
 void Elspot::init(int /*argc*/, char* /*argv*/[])
 {
-  g_application = this;
+  ::SetApp(this);
   m_config = new Poco::Util::PropertyFileConfiguration("elspot.properties");
 
-  m_currency = std::make_shared<Currency>();
-  m_mqtt = std::make_shared<MQTT>();
-  m_spotprice = std::make_shared<Spotprice>();
-  m_svg = std::make_shared<SVG>();
+  SetCurrency(std::make_shared<Currency>());
+  SetMQTT(std::make_shared<MQTT>());
+  SetSpotprice(std::make_shared<Spotprice>());
+  SetSVG(std::make_shared<SVG>());
+  SetNetworking(std::make_shared<Networking>());
 }
 
 Logger& Elspot::logger()
@@ -41,11 +43,9 @@ int Elspot::run()
   Poco::Logger::get(Logger::DEFAULT).setChannel(log_formattingchannel);
   Poco::Logger::get(Logger::DEFAULT).setLevel(Poco::Message::PRIO_INFORMATION);
 
-  std::thread mqtt_cron(&MQTTCron::main, m_mqtt_cron);
-  std::thread spotprice_cron(&SpotpriceCron::main, m_spotprice_cron);
-
-  mqtt_cron.join(); //join will never return
-  spotprice_cron.join();
+  std::stop_source stop_source;
+  std::jthread mqtt_cron_thread{mqtt_cron, stop_source.get_token()};
+  std::jthread spotprice_cron_thread{spotprice_cron, stop_source.get_token()};
   return 0;
 }
 

@@ -1,17 +1,36 @@
 #include "spotprice_cron.h"
 
+#include <condition_variable>
+
 #include "application.h"
 #include "day.h"
 
 
-void SpotpriceCron::main()
+std::condition_variable_any spotprice_cv;
+std::mutex spotprice_mutex;
+
+
+void spotprice_cron(std::stop_token token)
 {
   bool first = true;
+  bool failed = false;
   NorwegianDay most_recent_norwegian_today = UTCTime(0).AsNorwegianDay();
   NorwegianDay most_recent_norwegian_tomorrow = UTCTime(0).AsNorwegianDay();
 
-  while(true)
+  while(!token.stop_requested())
   {
+    if (failed)
+    {
+      Poco::Logger::get(Logger::DEFAULT).warning("Waiting 5 minutes because of previous fail");
+      std::unique_lock<std::mutex> lock(spotprice_mutex);
+      if (spotprice_cv.wait_for(lock, token, std::chrono::minutes(5), [token]{return token.stop_requested();}))
+      {
+        Poco::Logger::get(Logger::DEFAULT).warning("Stop requested");
+        return;
+      }
+      failed = false;
+    }
+
     UTCTime now;
     NorwegianDay norwegian_today = now.AsNorwegianDay();
     NorwegianDay norwegian_tomorrow = now.IncrementNorwegianDaysCopy(1).AsNorwegianDay();
@@ -19,15 +38,17 @@ void SpotpriceCron::main()
     //If we have not cached today, cache today immediately!!!
     if (most_recent_norwegian_today != norwegian_today)
     {
-      if (::GetApp()->getSpotprice()->CacheEurRates(norwegian_today) &&
-          ::GetApp()->getMQTT()->GotPrices(norwegian_today) &&
-          ::GetApp()->getSVG()->GenerateSVGs(norwegian_today))
+      if (::GetApp()->GetSpotprice()->CacheEurRates(norwegian_today) &&
+          ::GetApp()->GetMQTT()->GotPrices(norwegian_today) &&
+          ::GetApp()->GetSVG()->GenerateSVGs(norwegian_today))
       {
         most_recent_norwegian_today = norwegian_today;
       }
       else
       {
         Poco::Logger::get(Logger::DEFAULT).error("Caching spotprice for today failed");
+        failed = true;
+        continue;
       }
     }
 
@@ -41,7 +62,12 @@ void SpotpriceCron::main()
 
     if (most_recent_norwegian_today==norwegian_today && most_recent_norwegian_tomorrow!=norwegian_tomorrow && now<poll_time)
     {
-      std::this_thread::sleep_until(std::chrono::system_clock::from_time_t(poll_time.AsUTCTimeT()));
+      std::unique_lock<std::mutex> lock(spotprice_mutex);
+      if (spotprice_cv.wait_until(lock, token, std::chrono::system_clock::from_time_t(poll_time.AsUTCTimeT()), [token]{return token.stop_requested();}))
+      {
+        Poco::Logger::get(Logger::DEFAULT).warning("Stop requested");
+        return;
+      }
     }
 
     //After 1200 UTC, try to cache any not already cached prices up to 3 times an hour (at XX:00, XX:20 and XX:40)
@@ -55,7 +81,13 @@ void SpotpriceCron::main()
           poll_time = UTCTime().IncrementSecondsCopy(20*60);
           poll_time.SetMinute(static_cast<uint8_t>((poll_time.GetMinute()/20)*20)); //Integer division to round down to 00|20|40
           poll_time.SetSecond(0);
-          std::this_thread::sleep_until(std::chrono::system_clock::from_time_t(poll_time.AsUTCTimeT()));
+
+          std::unique_lock<std::mutex> lock(spotprice_mutex);
+          if (spotprice_cv.wait_until(lock, token, std::chrono::system_clock::from_time_t(poll_time.AsUTCTimeT()), [token]{return token.stop_requested();}))
+          {
+            Poco::Logger::get(Logger::DEFAULT).warning("Stop requested");
+            return;
+          }
         }
         
         //If, however unlikely, we have waited until midnight, restart loop iteration to reflect change of day
@@ -70,15 +102,17 @@ void SpotpriceCron::main()
         //Are we STILL not having todays prices? Keep on trying..
         if (most_recent_norwegian_today != norwegian_today)
         {
-          if (::GetApp()->getSpotprice()->CacheEurRates(norwegian_today) &&
-              ::GetApp()->getMQTT()->GotPrices(norwegian_today) &&
-              ::GetApp()->getSVG()->GenerateSVGs(norwegian_today))
+          if (::GetApp()->GetSpotprice()->CacheEurRates(norwegian_today) &&
+              ::GetApp()->GetMQTT()->GotPrices(norwegian_today) &&
+              ::GetApp()->GetSVG()->GenerateSVGs(norwegian_today))
           {
             most_recent_norwegian_today = norwegian_today;
           }
           else
           {
             Poco::Logger::get(Logger::DEFAULT).error("Caching spotprice for today failed again");
+            failed = true;
+            continue;
           }
         }
         
@@ -86,15 +120,17 @@ void SpotpriceCron::main()
         now = UTCTime();
         if (most_recent_norwegian_tomorrow != norwegian_tomorrow)
         {
-          if (::GetApp()->getSpotprice()->CacheEurRates(norwegian_tomorrow) &&
-              ::GetApp()->getMQTT()->GotPrices(norwegian_tomorrow) &&
-              ::GetApp()->getSVG()->GenerateSVGs(norwegian_tomorrow))
+          if (::GetApp()->GetSpotprice()->CacheEurRates(norwegian_tomorrow) &&
+              ::GetApp()->GetMQTT()->GotPrices(norwegian_tomorrow) &&
+              ::GetApp()->GetSVG()->GenerateSVGs(norwegian_tomorrow))
           {
             most_recent_norwegian_tomorrow = norwegian_tomorrow;
           }
           else
           {
             Poco::Logger::get(Logger::DEFAULT).error("Caching spotprice for tomorrow failed at " + now.AsNorwegianTime().ToString());
+            failed = true;
+            continue;
           }
         }
       }
@@ -106,7 +142,12 @@ void SpotpriceCron::main()
         midnight_utc.SetMinute(0);
         midnight_utc.SetSecond(0);
 
-        std::this_thread::sleep_until(std::chrono::system_clock::from_time_t(midnight_utc.AsUTCTimeT()));
+        std::unique_lock<std::mutex> lock(spotprice_mutex);
+        if (spotprice_cv.wait_until(lock, token, std::chrono::system_clock::from_time_t(midnight_utc.AsUTCTimeT()), [token]{return token.stop_requested();}))
+        {
+          Poco::Logger::get(Logger::DEFAULT).warning("Stop requested");
+          return;
+        }
       }
     }
   }

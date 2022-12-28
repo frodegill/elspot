@@ -8,14 +8,10 @@
 #include <fmt/printf.h>
 
 #include <Poco/Logger.h>
-#include <Poco/URI.h>
 #include <Poco/DOM/AutoPtr.h>
 #include <Poco/DOM/Document.h>
 #include <Poco/DOM/DOMParser.h>
 #include <Poco/DOM/NodeList.h>
-#include <Poco/Net/HTTPSClientSession.h>
-#include <Poco/Net/HTTPRequest.h>
-#include <Poco/Net/HTTPResponse.h>
 #include <Poco/SAX/InputSource.h>
 
 #include "application.h"
@@ -39,7 +35,7 @@ bool Spotprice::CacheEurRates(const NorwegianDay& norwegian_day)
 bool Spotprice::GetEurRates(const NorwegianDay& norwegian_day, AreaRateType& eur_rates)
 {
   { //Lock scope
-    const std::lock_guard<std::mutex> lock(m_failmap_mutex);
+    const std::lock_guard<std::mutex> lock(m_eur_rates_mutex);
 
     //Already fetched?
     auto existing_rate = m_eur_rates.find(norwegian_day.AsULong());
@@ -68,27 +64,31 @@ bool Spotprice::GetEurRates(const NorwegianDay& norwegian_day, AreaRateType& eur
 
 bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
 {
-  //Remove expired failures
-  auto fail_expire_time = std::chrono::system_clock::now() - RETRY_DURATION;
+  { //Lock scope
+    const std::lock_guard<std::mutex> lock(m_failmap_mutex);
+
+    //Remove expired failures
+    auto fail_expire_time = std::chrono::system_clock::now() - RETRY_DURATION;
 #if 0
-  std::erase_if(m_failmap, [fail_expire_time](const auto& item) {
-    auto const& [key, value] = item;
-    return value < fail_expire_time;
-  });
+    std::erase_if(m_failmap, [fail_expire_time](const auto& item) {
+      auto const& [key, value] = item;
+      return value < fail_expire_time;
+    });
 #else
-  for (std::map<unsigned long, std::chrono::system_clock::time_point>::iterator it=m_failmap.begin(); it!=m_failmap.end(); ++it)
-  {
-      if (it->second < fail_expire_time)
-      {
-        m_failmap.erase(it);
-      }
-  }
+    for (std::map<unsigned long, std::chrono::system_clock::time_point>::iterator it=m_failmap.begin(); it!=m_failmap.end(); ++it)
+    {
+        if (it->second < fail_expire_time)
+        {
+          m_failmap.erase(it);
+        }
+    }
 #endif
 
-  if (m_failmap.find(norwegian_day.AsULong()) != m_failmap.end()) //Recently failed?
-  {
-    Poco::Logger::get(Logger::DEFAULT).information(std::string("Recently failed fetching spotprice for day ")+norwegian_day.ToString());
-    return false;
+    if (m_failmap.find(norwegian_day.AsULong()) != m_failmap.end()) //Recently failed?
+    {
+      Poco::Logger::get(Logger::DEFAULT).information(std::string("Recently failed fetching spotprice for day ")+norwegian_day.ToString());
+      return false;
+    }
   }
 
   std::string xml_buffer;
@@ -101,30 +101,23 @@ bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
     {
       Poco::URI uri(fmt::sprintf(DAYAHEAD_URL, ::GetApp()->GetConfig(Elspot::ENTSOE_TOKEN_PROPERTY), m_areas[area_index].code, m_areas[area_index].code, norwegian_day.AsULong(), norwegian_day.AsULong()));
 
-      std::unique_ptr<Poco::Net::HTTPClientSession> session = std::make_unique<Poco::Net::HTTPSClientSession>(uri.getHost(), uri.getPort());
+      const std::shared_ptr<Networking> networking = ::GetApp()->GetNetworking();
+      if (!networking.get())
+      {
+        return false;
+      }
+      std::unique_ptr<Poco::Net::HTTPSClientSession> session = networking->CreateSession(uri);
+      networking->CallGET(session, uri, "application/xml");
 
-      // prepare path
-      std::string path(uri.getPathAndQuery());
-      if (path.empty())
-        path = "/";
-
-      // send request
-      Poco::Net::HTTPRequest req(Poco::Net::HTTPRequest::HTTP_GET, path, Poco::Net::HTTPMessage::HTTP_1_1);
-      session->setKeepAliveTimeout(Poco::Timespan(30, 0));
-      req.set("Accept", "application/xml");
-      session->sendRequest(req);
-
-      // get response
+      DayRateType area_prices;
       Poco::Net::HTTPResponse res;
+      Poco::XML::DOMParser dom_parser;
+      Poco::XML::InputSource xml_src(session->receiveResponse(res));
       if (Poco::Net::HTTPResponse::HTTP_OK != res.getStatus())
       {
         return RegisterFail(norwegian_day);
       }
 
-      DayRateType area_prices;
-
-      Poco::XML::DOMParser dom_parser;
-      Poco::XML::InputSource xml_src(session->receiveResponse(res));
       xml_buffer = std::string(std::istreambuf_iterator<char>(*xml_src.getByteStream()), {});
       Poco::AutoPtr<Poco::XML::Document> xml_doc = dom_parser.parseString(xml_buffer);
       points = xml_doc->getElementsByTagName("Point");

@@ -172,13 +172,13 @@ bool MQTT::Publish(const std::string& topic, const std::string& value)
 
 bool MQTT::GetInfo(const NorwegianDay& norwegian_day, Spotprice::AreaRateType& area_rates, double& exchange_rate) const
 {
-  if (!::GetApp()->getSpotprice()->GetEurRates(norwegian_day, area_rates))
+  if (!::GetApp()->GetSpotprice()->GetEurRates(norwegian_day, area_rates))
   {
     Poco::Logger::get(Logger::DEFAULT).error(std::string("Failed to get EUR rates for ") + norwegian_day.ToString());
     return false;
   }
 
-  if (!::GetApp()->getCurrency()->GetExchangeRate(norwegian_day, exchange_rate))
+  if (!::GetApp()->GetCurrency()->GetExchangeRate(norwegian_day, exchange_rate))
   {
     Poco::Logger::get(Logger::DEFAULT).error(std::string("Failed to get exchange rate for ") + norwegian_day.ToString());
     return false;

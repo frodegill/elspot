@@ -4,9 +4,9 @@
 #include "day.h"
 
 
-void MQTTCron::main()
+void mqtt_cron(std::stop_token token)
 {
-  while(true)
+  while(!token.stop_requested())
   {
     //Wait until next whole hour
     UTCTime this_hour;
@@ -18,7 +18,7 @@ void MQTTCron::main()
     //Publish this hour spotprices (and retry after 5 minutes if it fails. (Give up after 50 minutes of retrying..)
     for (int retry_count=0; retry_count<10; retry_count++)
     {
-      if (::GetApp()->getMQTT()->PublishCurrentPrices())
+      if (::GetApp()->GetMQTT()->PublishCurrentPrices())
       {
         break; //Success! Bail out
       }

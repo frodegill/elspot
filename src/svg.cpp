@@ -30,11 +30,11 @@ bool SVG::GenerateSVGs(const NorwegianDay& norwegian_day) const
 
   //Get prices
   Spotprice::AreaRateType area_rates;
-  if (!::GetApp()->getSpotprice()->GetEurRates(norwegian_day, area_rates))
+  if (!::GetApp()->GetSpotprice()->GetEurRates(norwegian_day, area_rates))
     return false;
 
   double exchange_rate;
-  bool found_nok = ::GetApp()->getCurrency()->GetExchangeRate(norwegian_day, exchange_rate);
+  bool found_nok = ::GetApp()->GetCurrency()->GetExchangeRate(norwegian_day, exchange_rate);
 
   bool status = true;
   for (std::array<Area,5>::size_type area_index=0; area_index<area_rates.size(); area_index++)
