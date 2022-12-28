@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Install dependencies
-      run: sudo apt-get install libgtest-dev libboost-dev libpoco-dev libwxbase3.0-dev libfmt-dev git cmake doxygen
+      run: sudo apt-get install libgtest-dev libgmock-dev libboost-dev libpoco-dev libwxbase3.0-dev libfmt-dev git cmake doxygen
 
     - name: Install Paho C client
       run: cd && git clone https://github.com/eclipse/paho.mqtt.c.git && cd paho.mqtt.c && cmake -Bbuild -H. -DPAHO_ENABLE_TESTING=OFF -DPAHO_BUILD_STATIC=ON -DPAHO_WITH_SSL=ON -DPAHO_HIGH_PERFORMANCE=ON && sudo cmake --build build/ --target install && sudo ldconfig
