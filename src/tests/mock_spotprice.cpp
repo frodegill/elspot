@@ -9,16 +9,17 @@
 #include "../spotprice_cron.h"
 
 
-TEST(SpotpriceCronTest, InvalidResponseTest) {
+bool mockNetworkResponse(const std::string& mocked_response, const NorwegianDay& day, Spotprice::AreaRateType eur_rates)
+{
   auto networking_mock = std::make_shared<testing::NiceMock<NetworkingMock>>();
   auto session_mock = std::make_unique<testing::NiceMock<HTTPSClientSessionMock>>();
 
-  Elspot* elspot = new Elspot();
+  std::shared_ptr<Elspot> elspot = std::make_shared<Elspot>();
   elspot->init(0, nullptr);
   elspot->SetNetworking(networking_mock);
 
   Poco::Net::HTTPResponse dummy_httpresponse(Poco::Net::HTTPResponse::HTTP_OK);
-  std::stringstream dummy_response("asdf");
+  std::stringstream dummy_response(mocked_response);
   ON_CALL(*session_mock, receiveResponse(testing::_))
     .WillByDefault(testing::DoAll(
       testing::SetArgReferee<0>(dummy_httpresponse),
@@ -37,7 +38,23 @@ TEST(SpotpriceCronTest, InvalidResponseTest) {
 
   elspot->SetNetworking(nullptr); //Decrease refCounter to make gMock do its magic
 
+  return elspot->GetSpotprice()->GetEurRates(day, eur_rates);
+}
+
+TEST(SpotpriceCronTest, NotXMLResponseTest) {
   NorwegianDay dummy_day = UTCTime().AsNorwegianDay();
   Spotprice::AreaRateType eur_rates;
-  EXPECT_FALSE(elspot->GetSpotprice()->GetEurRates(dummy_day, eur_rates));
+  EXPECT_FALSE(mockNetworkResponse("This is invalid XML", dummy_day, eur_rates));
+}
+
+TEST(SpotpriceCronTest, InvalidXMLResponseTest) {
+  NorwegianDay dummy_day = UTCTime().AsNorwegianDay();
+  Spotprice::AreaRateType eur_rates;
+  EXPECT_FALSE(mockNetworkResponse("<xml>Invalid XML</xlm>", dummy_day, eur_rates));
+}
+
+TEST(SpotpriceCronTest, IncompleteXMLResponseTest) {
+  NorwegianDay dummy_day = UTCTime().AsNorwegianDay();
+  Spotprice::AreaRateType eur_rates;
+  EXPECT_FALSE(mockNetworkResponse("<xml>Valid XML, with no rates</xml>", dummy_day, eur_rates));
 }
