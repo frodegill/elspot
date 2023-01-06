@@ -96,7 +96,7 @@ bool Currency::FetchEur(const NorwegianDay& norwegian_day)
     {
       return false;
     }
-    std::unique_ptr<Poco::Net::HTTPSClientSession> session = networking->CreateSession(uri);
+    std::shared_ptr<Poco::Net::HTTPSClientSession> session = networking->CreateSession(uri);
     networking->CallGET(session, uri, "application/json");
 
     Poco::Net::HTTPResponse res;

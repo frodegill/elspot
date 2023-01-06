@@ -41,13 +41,14 @@ public:
 
 public:
   MQTT();
+  virtual ~MQTT() = default;
 
 public:
-  void connection_lost(const std::string& cause) override;
+  virtual void connection_lost(const std::string& cause) override;
   
 public:
-  [[nodiscard]] bool GotPrices(const NorwegianDay& norwegian_day);
-  [[nodiscard]] bool PublishCurrentPrices();
+  [[nodiscard]] virtual bool GotPrices(const NorwegianDay& norwegian_day);
+  [[nodiscard]] virtual bool PublishCurrentPrices();
 
 private:
   [[nodiscard]] bool Publish(const std::string& topic, const double& value, int precision=2);

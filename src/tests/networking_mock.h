@@ -22,8 +22,8 @@ public:
   virtual ~NetworkingMock() = default;
 
 public:
-  MOCK_METHOD(std::unique_ptr<Poco::Net::HTTPSClientSession>, CreateSession, (const Poco::URI& uri), (const));
-  MOCK_METHOD(void,                                           CallGET,       (const std::unique_ptr<Poco::Net::HTTPSClientSession>& session,
+  MOCK_METHOD(std::shared_ptr<Poco::Net::HTTPSClientSession>, CreateSession, (const Poco::URI& uri), (const));
+  MOCK_METHOD(void,                                           CallGET,       (const std::shared_ptr<Poco::Net::HTTPSClientSession>& session,
                                                                               const Poco::URI& uri,
                                                                               const std::string& accept), (const));
 };

@@ -14,8 +14,8 @@ public:
   virtual ~Networking() = default;
 
 public:
-  [[nodiscard]] virtual std::unique_ptr<Poco::Net::HTTPSClientSession> CreateSession(const Poco::URI& uri) const;
-  virtual void CallGET(const std::unique_ptr<Poco::Net::HTTPSClientSession>& session, const Poco::URI& uri, const std::string& accept) const;
+  [[nodiscard]] virtual std::shared_ptr<Poco::Net::HTTPSClientSession> CreateSession(const Poco::URI& uri) const;
+  virtual void CallGET(const std::shared_ptr<Poco::Net::HTTPSClientSession>& session, const Poco::URI& uri, const std::string& accept) const;
 
 };
 

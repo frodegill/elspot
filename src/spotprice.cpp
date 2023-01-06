@@ -106,7 +106,7 @@ bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
       {
         return false;
       }
-      std::unique_ptr<Poco::Net::HTTPSClientSession> session = networking->CreateSession(uri);
+      std::shared_ptr<Poco::Net::HTTPSClientSession> session = networking->CreateSession(uri);
       networking->CallGET(session, uri, "application/xml");
 
       DayRateType area_prices;
@@ -119,8 +119,15 @@ bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
       }
 
       xml_buffer = std::string(std::istreambuf_iterator<char>(*xml_src.getByteStream()), {});
+      if (xml_buffer.empty())
+      {
+        Poco::Logger::get(Logger::DEFAULT).error(std::string("Spotprice: Got 0 bytes for ")+uri.toString());
+        return RegisterFail(norwegian_day);
+      }
+
       Poco::AutoPtr<Poco::XML::Document> xml_doc = dom_parser.parseString(xml_buffer);
       points = xml_doc->getElementsByTagName("Point");
+
       if (points->length()<23 || points->length()>25)
       {
         Poco::Logger::get(Logger::DEFAULT).error(std::string("Spotprice: Didn't get 24 +/- 1 points for ")+norwegian_day.ToString());
@@ -129,7 +136,7 @@ bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
       }
       
       bool winter_to_summertime = points->length()==23;
-      bool summer_to_wintertime = points->length()==23;
+      bool summer_to_wintertime = points->length()==25;
       int offset = 0;
       for (unsigned long point_index=0; point_index<points->length(); point_index++)
       {
