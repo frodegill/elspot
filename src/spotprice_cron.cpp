@@ -7,11 +7,19 @@
 void SpotpriceCron::main()
 {
   bool first = true;
+  bool failed = false;
   NorwegianDay most_recent_norwegian_today = UTCTime(0).AsNorwegianDay();
   NorwegianDay most_recent_norwegian_tomorrow = UTCTime(0).AsNorwegianDay();
 
   while(true)
   {
+    if (failed)
+    {
+      Poco::Logger::get(Logger::DEFAULT).warning("Waiting 5 minutes because of previous fail");
+      std::this_thread::sleep_for(std::chrono::minutes(5)); //Wait 5 minutes, retry
+      failed = false;
+    }
+
     UTCTime now;
     NorwegianDay norwegian_today = now.AsNorwegianDay();
     NorwegianDay norwegian_tomorrow = now.IncrementNorwegianDaysCopy(1).AsNorwegianDay();
@@ -28,6 +36,8 @@ void SpotpriceCron::main()
       else
       {
         Poco::Logger::get(Logger::DEFAULT).error("Caching spotprice for today failed");
+        failed = true;
+        continue;
       }
     }
 
@@ -79,6 +89,8 @@ void SpotpriceCron::main()
           else
           {
             Poco::Logger::get(Logger::DEFAULT).error("Caching spotprice for today failed again");
+            failed = true;
+            continue;
           }
         }
         
@@ -95,6 +107,8 @@ void SpotpriceCron::main()
           else
           {
             Poco::Logger::get(Logger::DEFAULT).error("Caching spotprice for tomorrow failed at " + now.AsNorwegianTime().ToString());
+            failed = true;
+            continue;
           }
         }
       }

@@ -39,7 +39,7 @@ bool Spotprice::CacheEurRates(const NorwegianDay& norwegian_day)
 bool Spotprice::GetEurRates(const NorwegianDay& norwegian_day, AreaRateType& eur_rates)
 {
   { //Lock scope
-    const std::lock_guard<std::mutex> lock(m_failmap_mutex);
+    const std::lock_guard<std::mutex> lock(m_eur_rates_mutex);
 
     //Already fetched?
     auto existing_rate = m_eur_rates.find(norwegian_day.AsULong());
@@ -136,7 +136,7 @@ bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
       }
       
       bool winter_to_summertime = points->length()==23;
-      bool summer_to_wintertime = points->length()==23;
+      bool summer_to_wintertime = points->length()==25;
       int offset = 0;
       for (unsigned long point_index=0; point_index<points->length(); point_index++)
       {
