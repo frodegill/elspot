@@ -12,6 +12,7 @@
 
 #include "application.h"
 
+#define FLOAT_MARGIN_OF_ERROR (0.0001f)
 
 bool SVG::GenerateSVGs(const NorwegianDay& norwegian_day) const
 {
@@ -107,7 +108,7 @@ bool SVG::GenerateSVG(const std::string& svg_template, const NorwegianDay& norwe
     for (int hour=0; hour<Spotprice::HOURS_PER_DAY; hour++)
     {
       current_rate = eur_rates[hour] * exchange_rate;
-      if (current_rate != previous_rate) {
+      if (::fabs(current_rate - previous_rate) > FLOAT_MARGIN_OF_ERROR) {
         ss << " V" << rateToYPos(current_rate, min_rate, max_rate);
       }
       ss << " h25";
