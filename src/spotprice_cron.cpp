@@ -136,7 +136,7 @@ void spotprice_cron(std::stop_token token)
       }
       else //Eveything is done for today. Wait until midnight norwegian time (should even work for days with 23 or 25 hours)
       {
-        UTCTime now;
+        now = UTCTime();
         NorwegianTime midnight_norwegiantime = now.AsNorwegianTime();
         UTCTime midnight_utc = now.IncrementHoursCopy(24 - midnight_norwegiantime.GetHour());
         midnight_utc.SetMinute(0);
