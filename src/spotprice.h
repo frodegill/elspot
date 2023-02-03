@@ -42,7 +42,7 @@ public:
     typedef std::array<DayRateType,m_areas.size()> AreaRateType;
 
 public:
-  [[nodiscard]] virtual bool HasEurRate(const NorwegianDay& norwegian_day);
+  [[nodiscard]] virtual bool HasEurRate(const NorwegianDay& norwegian_day) const;
   [[nodiscard]] virtual bool CacheEurRates(const NorwegianDay& norwegian_day);
   [[nodiscard]] virtual bool GetEurRates(const NorwegianDay& norwegian_day, AreaRateType& eur_rates);
   
@@ -52,7 +52,7 @@ private:
 
 private:
   std::map<unsigned long, AreaRateType> m_eur_rates;
-  std::mutex m_eur_rates_mutex;
+  mutable std::mutex m_eur_rates_mutex;
 
   std::map<unsigned long, std::chrono::system_clock::time_point> m_failmap;
   std::mutex m_failmap_mutex;

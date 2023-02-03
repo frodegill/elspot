@@ -17,7 +17,7 @@
 #include "application.h"
 
 
-bool Spotprice::HasEurRate(const NorwegianDay& norwegian_day)
+bool Spotprice::HasEurRate(const NorwegianDay& norwegian_day) const
 {
   { //Lock scope
     const std::lock_guard<std::mutex> lock(m_eur_rates_mutex);
