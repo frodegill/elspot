@@ -56,7 +56,7 @@ std::shared_ptr<Poco::Net::HTTPSClientSession> NetworkingStub::CreateSession(con
 void NetworkingStub::CallGET(const std::shared_ptr<Poco::Net::HTTPSClientSession>& session, const Poco::URI& uri, const std::string&) const
 {
   Poco::Logger::get(Logger::DEFAULT).error(std::string("Stubbing GET for ") + uri.toString());
-  if (uri.toString().starts_with("https://transparency.entsoe.eu/"))
+  if (uri.toString().starts_with("https://web-api.tp.entsoe.eu/"))
   {
     static_cast<HTTPSClientSessionStub*>(session.get())->setStubResponse(m_spotprice_response_text, m_spotprice_response_code);
   }
