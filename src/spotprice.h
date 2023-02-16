@@ -26,7 +26,7 @@ public:
 
 private:
   static constexpr std::chrono::minutes RETRY_DURATION = std::chrono::minutes(10);
-  static constexpr const char* DAYAHEAD_URL = "https://transparency.entsoe.eu/api?securityToken=%s&documentType=A44&in_Domain=%s&out_Domain=%s&periodStart=%08lu1200&periodEnd=%08lu1300"; //Ask for only one hour mid-day. We will get entire day
+  static constexpr const char* DAYAHEAD_URL = "https://web-api.tp.entsoe.eu/api?securityToken=%s&documentType=A44&in_Domain=%s&out_Domain=%s&periodStart=%08lu1200&periodEnd=%08lu1300"; //Ask for only one hour mid-day. We will get entire day
 
 public:
   static constexpr int HOURS_PER_DAY = 24;
