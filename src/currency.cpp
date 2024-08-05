@@ -5,6 +5,7 @@
 #include <fmt/printf.h>
 
 #include <Poco/JSON/Parser.h>
+#include <Poco/JSON/Object.h>
 
 #include "application.h"
 
