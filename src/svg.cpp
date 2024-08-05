@@ -66,7 +66,7 @@ bool SVG::GenerateSVG(const std::string& svg_template, const NorwegianDay& norwe
   for (std::array<Area,5>::size_type min_max_index=0; min_max_index<area_rates.size(); min_max_index++)
   {
     Spotprice::DayRateType eur_rates = area_rates[min_max_index];
-    for (int hour=0; hour<Spotprice::HOURS_PER_DAY; hour++)
+    for (unsigned int hour=0; hour<Spotprice::HOURS_PER_DAY; hour++)
     {
       current_rate = eur_rates[hour] * exchange_rate;
       if (eur_rates[hour]*exchange_rate < min_rate)
@@ -90,7 +90,7 @@ bool SVG::GenerateSVG(const std::string& svg_template, const NorwegianDay& norwe
   static constexpr const int grid_steps = 6;
   double ygrid_max = dceil(max_rate, precision-1);
   double ygrid_min = dfloor(min_rate, precision-1);
-  for (int ygrid=0; ygrid<=grid_steps; ygrid++)
+  for (unsigned int ygrid=0; ygrid<=grid_steps; ygrid++)
   {
     boost::replace_all(svg_content, fmt::sprintf("{y%d}", ygrid), MQTT::DoubleToString(ygrid*(ygrid_max-ygrid_min)/grid_steps, precision));
   }
@@ -105,7 +105,7 @@ bool SVG::GenerateSVG(const std::string& svg_template, const NorwegianDay& norwe
     double previous_rate = eur_rates[0] * exchange_rate;
     ss << "M50 " << rateToYPos(previous_rate, min_rate, max_rate);
     
-    for (int hour=0; hour<Spotprice::HOURS_PER_DAY; hour++)
+    for (unsigned int hour=0; hour<Spotprice::HOURS_PER_DAY; hour++)
     {
       current_rate = eur_rates[hour] * exchange_rate;
       if (::fabs(current_rate - previous_rate) > FLOAT_MARGIN_OF_ERROR) {

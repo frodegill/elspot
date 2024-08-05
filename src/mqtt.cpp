@@ -81,7 +81,7 @@ bool MQTT::GotPrices(const NorwegianDay& norwegian_day)
       eur_rates = area_rates[area_index];
       CopyAndSortRates(eur_rates, sorted_prices);
       
-      for (int index=0; index<Spotprice::HOURS_PER_DAY; index++)
+      for (unsigned int index=0; index<Spotprice::HOURS_PER_DAY; index++)
       {
         status &= Publish(fmt::sprintf(is_today ? "nordpool/today/%s/nok%02d" : "nordpool/tomorrow/%s/nok%02d", Spotprice::m_areas[area_index].id, index), eur_rates[index] * exchange_rate);
         status &= Publish(fmt::sprintf(is_today ? "nordpool/today/%s/eur%02d" : "nordpool/tomorrow/%s/eur%02d", Spotprice::m_areas[area_index].id, index), eur_rates[index]);
@@ -190,7 +190,7 @@ bool MQTT::GetInfo(const NorwegianDay& norwegian_day, Spotprice::AreaRateType& a
 void MQTT::CopyAndSortRates(const Spotprice::DayRateType& eur_rates, std::array<Price,Spotprice::HOURS_PER_DAY>& sorted_prices) const
 {
   //Copy and sort
-  for (int hour=0; hour<Spotprice::HOURS_PER_DAY; hour++)
+  for (unsigned int hour=0; hour<Spotprice::HOURS_PER_DAY; hour++)
   {
     sorted_prices[hour].hour = hour;
     sorted_prices[hour].price = eur_rates[hour];

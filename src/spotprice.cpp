@@ -164,11 +164,11 @@ bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
 
               if (0<=(position_index+offset) && HOURS_PER_DAY>(position_index+offset))
               {
-                area_prices[position_index+offset] = price;
+                area_prices[static_cast<unsigned int>(position_index+offset)] = price;
 
                 if (winter_to_summertime && position_index==1)
                 {
-                  area_prices[position_index+1] = price;
+                  area_prices[static_cast<unsigned int>(position_index+1)] = price;
                 }
               }
             }

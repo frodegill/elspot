@@ -16,7 +16,7 @@ void mqtt_cron(std::stop_token token)
     std::this_thread::sleep_until(std::chrono::system_clock::from_time_t(next_hour.AsUTCTimeT()));
     
     //Publish this hour spotprices (and retry after 5 minutes if it fails. (Give up after 50 minutes of retrying..)
-    for (int retry_count=0; retry_count<10; retry_count++)
+    for (unsigned int retry_count=0; retry_count<10; retry_count++)
     {
       if (::GetApp()->GetMQTT()->PublishCurrentPrices())
       {

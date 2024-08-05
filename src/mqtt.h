@@ -28,7 +28,7 @@ nordpool/tomorrow/<sone>/sorted<[0]-[23]> : Hour reference from the most expensi
 
 struct Price
 {
-  int hour;
+  unsigned int hour;
   double price;
 };
 
