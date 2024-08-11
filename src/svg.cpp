@@ -92,7 +92,7 @@ bool SVG::GenerateSVG(const std::string& svg_template, const NorwegianDay& norwe
   double ygrid_min = dfloor(min_rate, precision-1);
   for (unsigned int ygrid=0; ygrid<=grid_steps; ygrid++)
   {
-    boost::replace_all(svg_content, fmt::sprintf("{y%d}", ygrid), MQTT::DoubleToString(ygrid*(ygrid_max-ygrid_min)/grid_steps, precision));
+    boost::replace_all(svg_content, fmt::sprintf("{y%d}", ygrid), MQTT::DoubleToString(ygrid_min + ygrid*(ygrid_max-ygrid_min)/grid_steps, precision));
   }
 
   //Draw price lines
