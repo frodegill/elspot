@@ -15,6 +15,7 @@ class UTCTime
 public:
   UTCTime();
   UTCTime(const std::time_t& time);
+  UTCTime(const std::string& time);
 private:
   void Initialize(const std::time_t& time);
 public:

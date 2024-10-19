@@ -77,3 +77,17 @@ TEST(SpotpriceCronTest, ToWintertimeXMLResponseTest) {
   EXPECT_TRUE(stubNetworkResponse(networking_stub, dummy_day, eur_rates));
   EXPECT_EQ(eur_rates[0][7], 106.63);
 }
+
+TEST(SpotpriceCronTest, CurveTypeA03XMLResponseTest) {
+  NorwegianDay dummy_day = UTCTime(1729287162).AsNorwegianDay();
+  Spotprice::AreaRateType eur_rates;
+  std::string spotprice_response_text, exchangerate_response_text;
+  fileContent(std::filesystem::path("src/tests/curvetype_a03.xml"), spotprice_response_text);
+  fileContent(std::filesystem::path("src/tests/exchangerates.json"), exchangerate_response_text);
+  auto networking_stub = std::make_shared<NetworkingStub>(spotprice_response_text, Poco::Net::HTTPResponse::HTTP_OK,
+                                                          exchangerate_response_text, Poco::Net::HTTPResponse::HTTP_OK);
+  EXPECT_TRUE(stubNetworkResponse(networking_stub, dummy_day, eur_rates));
+  EXPECT_EQ(eur_rates[0][13], 13.17);
+  EXPECT_EQ(eur_rates[0][14], 13.17);
+  EXPECT_EQ(eur_rates[0][15], 13.42);
+}

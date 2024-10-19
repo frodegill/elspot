@@ -126,18 +126,55 @@ bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
       }
 
       Poco::AutoPtr<Poco::XML::Document> xml_doc = dom_parser.parseString(xml_buffer);
-      points = xml_doc->getElementsByTagName("Point");
 
-      if (points->length()<23 || points->length()>25)
+      //Check curveType
+      Poco::XML::NodeList* curve_types = xml_doc->getElementsByTagName("curveType");
+      if (curve_types==nullptr || curve_types->length()==0)
       {
-        Poco::Logger::get(Logger::DEFAULT).error(std::string("Spotprice: Didn't get 24 +/- 1 points for ")+norwegian_day.ToString());
-        points->release();
+        Poco::Logger::get(Logger::DEFAULT).information(std::string("Did not get a curveType"));
+      } else {
+        Poco::XML::Node* curve_type = curve_types->item(0);
+        std::string curve_type_value = curve_type->innerText();
+        if (curve_type_value!="A01" && curve_type_value!="A03")
+        {
+          Poco::Logger::get(Logger::DEFAULT).information(std::string("Got curveType "+curve_type_value));
+        }
+      }
+      if (curve_types) curve_types->release();
+
+      //Check resolution
+      Poco::XML::NodeList* resolutions = xml_doc->getElementsByTagName("resolution");
+      if (resolutions==nullptr || resolutions->length()==0)
+      {
+        Poco::Logger::get(Logger::DEFAULT).information(std::string("Did not get a resolution"));
+      } else {
+        Poco::XML::Node* resolution = resolutions->item(0);
+        std::string resolution_value = resolution->innerText();
+        if (resolution_value!="PT60M")
+        {
+          Poco::Logger::get(Logger::DEFAULT).information(std::string("Got resolution "+resolution_value));
+        }
+      }
+      if (resolutions) resolutions->release();
+
+      //Find start time
+      std::string start_value;
+      Poco::XML::NodeList* starts = xml_doc->getElementsByTagName("start");
+      if (starts==nullptr || starts->length()==0)
+      {
+        Poco::Logger::get(Logger::DEFAULT).error(std::string("Did not get a start time"));
+      } else {
+        Poco::XML::Node* start = starts->item(0);
+        start_value = start->innerText();
+      }
+      if (starts) starts->release();
+      if (start_value.empty())
+      {
         return RegisterFail(norwegian_day);
       }
-      
-      bool winter_to_summertime = points->length()==23;
-      bool summer_to_wintertime = points->length()==25;
-      int offset = 0;
+      UTCTime start_time_utc(start_value);
+
+      points = xml_doc->getElementsByTagName("Point");
       for (unsigned long point_index=0; point_index<points->length(); point_index++)
       {
         Poco::XML::Node* point = points->item(point_index);
@@ -151,24 +188,16 @@ bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
             std::string price_amount_value = price_amount->innerText();
             if (!position_value.empty() && !price_amount_value.empty())
             {
-              int position_index = std::stoi(position_value) - 1; //Position_value is [1-24], unless change to summer- or wintertime
+              unsigned int position_hour = std::stoi(position_value) - 1;
               double price = std::stod(price_amount_value);
-              if (winter_to_summertime)
-              {
-                offset = position_index>1 ? 1 : 0;
-              }
-              else if (summer_to_wintertime)
-              {
-                offset = position_index>1 ? -1 : 0;
-              }
 
-              if (0<=(position_index+offset) && HOURS_PER_DAY>(position_index+offset))
+              //Both curveType A01 and A03 can work if we fill array from current position and to the end
+              for (; position_hour<(points->length()); position_hour++)
               {
-                area_prices[static_cast<unsigned int>(position_index+offset)] = price;
-
-                if (winter_to_summertime && position_index==1)
+                NorwegianTime local_time = start_time_utc.IncrementHoursCopy(position_hour).AsNorwegianTime();
+                if (norwegian_day == local_time)
                 {
-                  area_prices[static_cast<unsigned int>(position_index+1)] = price;
+                  area_prices[local_time.GetHour()] = price;
                 }
               }
             }

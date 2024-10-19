@@ -16,6 +16,15 @@ UTCTime::UTCTime(const std::time_t& time)
   Initialize(time);
 }
 
+UTCTime::UTCTime(const std::string& time)
+{
+  std::tm tm = {};
+  std::sscanf(time.c_str(), "%4u-%2u-%2uT%2u:%2uZ", &tm.tm_year, &tm.tm_mon, &tm.tm_mday, &tm.tm_hour, &tm.tm_min);
+  tm.tm_year -= 1900;
+  tm.tm_mon--;
+  Initialize(::timegm(&tm));
+}
+
 void UTCTime::Initialize(const std::time_t& time)
 {
   m_time_utc = time;

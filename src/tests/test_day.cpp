@@ -116,14 +116,14 @@ TEST(TestDay, TodayTomorrowTest) {
 }
 
 TEST(TestDay, DaysAfterTest) {
-  UTCTime now;
-  UTCTime four_weeks_ago = now.DecrementNorwegianDaysCopy(14);
-  UTCTime in_four_weeks = now.IncrementNorwegianDaysCopy(14);
-  EXPECT_EQ(now.AsNorwegianDay().DaysAfter(four_weeks_ago.AsNorwegianDay().AsULong()), 14);
-  EXPECT_EQ(now.AsNorwegianDay().DaysAfter(four_weeks_ago.AsNorwegianDay()), 14);
-  EXPECT_EQ(now.AsNorwegianDay().DaysAfter(in_four_weeks.AsNorwegianDay().AsULong()), -14);
-  EXPECT_EQ(now.AsNorwegianDay().DaysAfter(in_four_weeks.AsNorwegianDay()), -14);
-  EXPECT_FALSE(now.AsNorwegianDay() < four_weeks_ago.AsNorwegianDay());
+  UTCTime utc_time(1672444800L);
+  UTCTime four_weeks_ago = utc_time.DecrementNorwegianDaysCopy(14);
+  UTCTime in_four_weeks = utc_time.IncrementNorwegianDaysCopy(14);
+  EXPECT_EQ(utc_time.AsNorwegianDay().DaysAfter(four_weeks_ago.AsNorwegianDay().AsULong()), 14);
+  EXPECT_EQ(utc_time.AsNorwegianDay().DaysAfter(four_weeks_ago.AsNorwegianDay()), 14);
+  EXPECT_EQ(utc_time.AsNorwegianDay().DaysAfter(in_four_weeks.AsNorwegianDay().AsULong()), -14);
+  EXPECT_EQ(utc_time.AsNorwegianDay().DaysAfter(in_four_weeks.AsNorwegianDay()), -14);
+  EXPECT_FALSE(utc_time.AsNorwegianDay() < four_weeks_ago.AsNorwegianDay());
   EXPECT_TRUE(four_weeks_ago.AsNorwegianDay() != in_four_weeks.AsNorwegianDay());
-  EXPECT_FALSE(now.AsNorwegianDay() == four_weeks_ago.AsNorwegianDay());
+  EXPECT_FALSE(utc_time.AsNorwegianDay() == four_weeks_ago.AsNorwegianDay());
 }
