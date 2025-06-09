@@ -78,7 +78,7 @@ void spotprice_cron(std::stop_token token)
       {
         if (!first)
         {
-          poll_time = UTCTime().IncrementSecondsCopy(20*60);
+          poll_time = UTCTime().IncrementMinutesCopy(20);
           poll_time.SetMinute(static_cast<uint8_t>((poll_time.GetMinute()/20)*20)); //Integer division to round down to 00|20|40
           poll_time.SetSecond(0);
 

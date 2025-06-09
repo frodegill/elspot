@@ -20,49 +20,62 @@
 bool Spotprice::HasEurRate(const NorwegianDay& norwegian_day) const
 {
   { //Lock scope
-    const std::lock_guard<std::mutex> lock(m_eur_rates_mutex);
+    const std::lock_guard<std::mutex> lock(m_eur_quarter_rates_mutex);
 
-    return m_eur_rates.find(norwegian_day.AsULong()) != m_eur_rates.end();
+    return m_eur_quarter_rates.find(norwegian_day.AsULong()) != m_eur_quarter_rates.end();
   }
 }
 
 bool Spotprice::CacheEurRates(const NorwegianDay& norwegian_day)
 {
-  AreaRateType dummy;
-  return GetEurRates(norwegian_day, dummy);
+  AreaQuarterRateType dummy;
+  return GetEurQuarterRates(norwegian_day, dummy);
 }
 
-bool Spotprice::GetEurRates(const NorwegianDay& norwegian_day, AreaRateType& eur_rates)
+bool Spotprice::GetEurQuarterRates(const NorwegianDay& norwegian_day, AreaQuarterRateType& eur_quarter_rates)
 {
   { //Lock scope
-    const std::lock_guard<std::mutex> lock(m_eur_rates_mutex);
+    const std::lock_guard<std::mutex> lock(m_eur_quarter_rates_mutex);
 
     //Already fetched?
-    auto existing_rate = m_eur_rates.find(norwegian_day.AsULong());
-    if (existing_rate != m_eur_rates.end())
+    auto existing_rate = m_eur_quarter_rates.find(norwegian_day.AsULong());
+    if (existing_rate != m_eur_quarter_rates.end())
     {
-      eur_rates = existing_rate->second;
+      eur_quarter_rates = existing_rate->second;
       return true;
     }
     
     //Fetch rate!
-    if (!FetchEurRates(norwegian_day))
+    if (!FetchEurQuarterRates(norwegian_day))
         return false;
 
     //Has it been fetched?
-    existing_rate = m_eur_rates.find(norwegian_day.AsULong());
-    if (existing_rate == m_eur_rates.end())
+    existing_rate = m_eur_quarter_rates.find(norwegian_day.AsULong());
+    if (existing_rate == m_eur_quarter_rates.end())
     {
       return false;
     }
   
     //It has been fetched! Return it
-    eur_rates = (*existing_rate).second;
+    eur_quarter_rates = existing_rate->second;
   }
   return true;
 }
 
-bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
+double Spotprice::GetHourRate(const QuarterRateType& eur_rates, unsigned int hour)
+{
+  return (GetQuarterRate(eur_rates, (hour*4)+0) +
+          GetQuarterRate(eur_rates, (hour*4)+1) +
+          GetQuarterRate(eur_rates, (hour*4)+2) +
+          GetQuarterRate(eur_rates, (hour*4)+3)) / 4.0;
+}
+
+double Spotprice::GetQuarterRate(const QuarterRateType& eur_rates, unsigned int quarter)
+{
+  return eur_rates[quarter];
+}
+
+bool Spotprice::FetchEurQuarterRates(const NorwegianDay& norwegian_day)
 {
   { //Lock scope
     const std::lock_guard<std::mutex> lock(m_failmap_mutex);
@@ -86,7 +99,9 @@ bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
 
     if (m_failmap.find(norwegian_day.AsULong()) != m_failmap.end()) //Recently failed?
     {
-      Poco::Logger::get(Logger::DEFAULT).information(std::string("Recently failed fetching spotprice for day ")+norwegian_day.ToString());
+      Poco::Logger::get(Logger::DEFAULT).information(std::string("Recently failed fetching spotprice for day ")
+        +norwegian_day.ToString());
+
       return false;
     }
   }
@@ -95,11 +110,12 @@ bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
   Poco::XML::NodeList* points = nullptr;
   try
   {
-    AreaRateType area_rates;
+    AreaQuarterRateType area_quarter_rates;
     
     for (std::array<Area,5>::size_type area_index=0; area_index<m_areas.size(); area_index++)
     {
-      Poco::URI uri(fmt::sprintf(DAYAHEAD_URL, ::GetApp()->GetConfig(Elspot::ENTSOE_TOKEN_PROPERTY), m_areas[area_index].code, m_areas[area_index].code, norwegian_day.AsULong(), norwegian_day.AsULong()));
+      Poco::URI uri(fmt::sprintf(DAYAHEAD_URL, ::GetApp()->GetConfig(Elspot::ENTSOE_TOKEN_PROPERTY),
+        m_areas[area_index].code, m_areas[area_index].code, norwegian_day.AsULong(), norwegian_day.AsULong()));
 
       const std::shared_ptr<Networking> networking = ::GetApp()->GetNetworking();
       if (!networking.get())
@@ -109,7 +125,7 @@ bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
       std::shared_ptr<Poco::Net::HTTPSClientSession> session = networking->CreateSession(uri);
       networking->CallGET(session, uri, "application/xml");
 
-      DayRateType area_prices;
+      QuarterRateType area_quarter_prices;
       Poco::Net::HTTPResponse res;
       Poco::XML::DOMParser dom_parser;
       Poco::XML::InputSource xml_src(session->receiveResponse(res));
@@ -143,6 +159,7 @@ bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
       if (curve_types) curve_types->release();
 
       //Check resolution
+      int resolution_minutes = 0;
       Poco::XML::NodeList* resolutions = xml_doc->getElementsByTagName("resolution");
       if (resolutions==nullptr || resolutions->length()==0)
       {
@@ -150,9 +167,19 @@ bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
       } else {
         Poco::XML::Node* resolution = resolutions->item(0);
         std::string resolution_value = resolution->innerText();
-        if (resolution_value!="PT60M")
-        {
-          Poco::Logger::get(Logger::DEFAULT).information(std::string("Got resolution "+resolution_value));
+        Poco::Logger::get(Logger::DEFAULT).information(std::string("Got resolution "+resolution_value));
+
+        //Ugly parse out PT minutes
+        if (resolution_value[0]=='P' && resolution_value[1]=='T') {
+          size_t resolution_index = 2;
+          char ch;
+          while ((ch=resolution_value[resolution_index++]) != 0) {
+            if (ch>='0' && ch<='9') {
+              resolution_minutes = resolution_minutes*10 + (ch-'0');
+            } else {
+              break;
+            }
+          }
         }
       }
       if (resolutions) resolutions->release();
@@ -188,29 +215,27 @@ bool Spotprice::FetchEurRates(const NorwegianDay& norwegian_day)
             std::string price_amount_value = price_amount->innerText();
             if (!position_value.empty() && !price_amount_value.empty())
             {
-              unsigned int position_hour = std::stoi(position_value) - 1;
+              UTCTime position_time = start_time_utc.IncrementMinutesCopy((std::stoi(position_value)-1)*resolution_minutes);
+              uint8_t position_quarter = position_time.AsNorwegianTime().GetQuarter();
+
               double price = std::stod(price_amount_value);
 
               //Both curveType A01 and A03 can work if we fill array from current position and to the end
-              for (; position_hour<(points->length()); position_hour++)
+              for (; position_quarter<QUARTERS_PER_DAY; position_quarter++)
               {
-                NorwegianTime local_time = start_time_utc.IncrementHoursCopy(position_hour).AsNorwegianTime();
-                if (norwegian_day == local_time)
-                {
-                  area_prices[local_time.GetHour()] = price;
-                }
+                area_quarter_prices[position_quarter] = price;
               }
             }
           }
         }
       }
-      area_rates[area_index] = area_prices;
+      area_quarter_rates[area_index] = area_quarter_prices;
 
       points->release();
       points = nullptr;
     }
 
-    m_eur_rates[norwegian_day.AsULong()] = area_rates;
+    m_eur_quarter_rates[norwegian_day.AsULong()] = area_quarter_rates;
     
     Poco::Logger::get(Logger::DEFAULT).information(std::string("Spotprice: Got all prices for ")+norwegian_day.ToString());
     return true;

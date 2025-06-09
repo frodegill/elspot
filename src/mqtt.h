@@ -14,30 +14,44 @@
 nordpool/today/exchangerate               : Exchangerate used for EUR-NOK. Set to NOK for 1EUR
 nordpool/today/<sone>/nok                 : Current price in NOK. Set to NOK/KWh
 nordpool/today/<sone>/eur                 : Current price in EUR. Set to EUR/KWh
-nordpool/today/<sone>/order               : Current order, from most expensive (0) to least expensive (23). Set to 0-23
-nordpool/today/<sone>/nok<[00]-[23]>      : Price in NOK for a given hour. Set to NOK/KWh
-nordpool/today/<sone>/eur<[00]-[23]>      : Price in EUR for a given hour. Set to EUR/KWh
-nordpool/today/<sone>/order[00]-[23]>     : Order for a given hour, from most expensive (0) to least expensive (23). Set to 0-23
-nordpool/today/<sone>/sorted<[0]-[23]>    : Hour reference from the most expensive (0) to least expensive (23). Set to 00-23
+nordpool/today/<sone>/order               : Deprecated. Current order, from most expensive (0) to least expensive (23). Set to 0-23
+nordpool/today/<sone>/orderq              : Current order, from most expensive quater (0) to least expensive (95). Set to 0-95
+nordpool/today/<sone>/nok<[00-23]>        : Deprecated. Price in NOK for a given hour. Set to NOK/KWh
+nordpool/today/<sone>/eur<[00-23]>        : Deprecated. Price in EUR for a given hour. Set to EUR/KWh
+nordpool/today/<sone>/nok<[00-23][00,15,30,45]> : Price in NOK for a given quarter. Set to NOK/KWh
+nordpool/today/<sone>/eur<[00-23][00,15,30,45]> : Price in EUR for a given quarter. Set to EUR/KWh
+nordpool/today/<sone>/order[00-23]>       : Deprecated. Order for a given hour, from most expensive (0) to least expensive (23). Set to 0-23
+nordpool/today/<sone>/sorted<[0-23]>      : Deprecated. Hour reference from the most expensive (0) to least expensive (23). Set to 00-23
+nordpool/today/<sone>/order[00-23][00,15,30,45]> : Order for a given quarter, from most expensive (0) to least expensive (95). Set to 0-95
+nordpool/today/<sone>/sortedq<[0-95]>     : Quarter reference from the most expensive (0) to least expensive (95). Set to 0000-2345
 nordpool/tomorrow/exchangerate            : Exchangerate used for EUR-NOK. Set to NOK for 1EUR
-nordpool/tomorrow/<sone>/nok<[00]-[23]>   : Price in NOK for a given hour. Set to NOK/KWh
-nordpool/tomorrow/<sone>/eur<[00]-[23]>   : Price in EUR for a given hour. Set to EUR/KWh
-nordpool/tomorrow/<sone>/order[00]-[23]>  : Order for a given hour, from most expensive (0) to least expensive (23). Set to 0-23
-nordpool/tomorrow/<sone>/sorted<[0]-[23]> : Hour reference from the most expensive (0) to least expensive (23). Set to 00-23
+nordpool/tomorrow/<sone>/nok<[00]-[23]>   : Deprecated. Price in NOK for a given hour. Set to NOK/KWh
+nordpool/tomorrow/<sone>/eur<[00]-[23]>   : Deprecated. Price in EUR for a given hour. Set to EUR/KWh
+nordpool/tomorrow/<sone>/nok<[00-23][00,15,30,45]> : Price in NOK for a given quarter. Set to NOK/KWh
+nordpool/tomorrow/<sone>/eur<[00-23][00,15,30,45]> : Price in EUR for a given quarter. Set to EUR/KWh
+nordpool/tomorrow/<sone>/order[00]-[23]>  : Deprecated. Order for a given hour, from most expensive (0) to least expensive (23). Set to 0-23
+nordpool/tomorrow/<sone>/sorted<[0]-[23]> : Deprecated. Hour reference from the most expensive (0) to least expensive (23). Set to 00-23
+nordpool/tomorrow/<sone>/order[00-23][00,15,30,45]> : Order for a given quarter, from most expensive (0) to least expensive (95). Set to 0-95
+nordpool/tomorrow/<sone>/sortedq<[0-95]>     : Quarter reference from the most expensive (0) to least expensive (95). Set to 0000-2345
 #endif
 
-struct Price
+struct HourPrice
 {
   unsigned int hour;
   double price;
 };
 
+struct QuarterPrice
+{
+  unsigned int quarter;
+  double price;
+};
 
 class MQTT : public virtual mqtt::callback
 {
 public:
   static constexpr const char* CLIENT_ID = "elspot";
-  static constexpr int MAX_BUFFERED_MESSAGES = 4 + 4*24 + 1 + 4*24; //One message pr MQTT topic (as documented above)
+  static constexpr int MAX_BUFFERED_MESSAGES = 6 + 8*24 + 8*96; //One message pr MQTT topic (as documented above)
 
 public:
   MQTT();
@@ -53,9 +67,10 @@ public:
 private:
   [[nodiscard]] bool Publish(const std::string& topic, const double& value, int precision=2);
   [[nodiscard]] bool Publish(const std::string& topic, const std::string& value);
-  [[nodiscard]] bool GetInfo(const NorwegianDay& norwegian_day, Spotprice::AreaRateType& area_rates, double& exchange_rate) const;
-  void CopyAndSortRates(const Spotprice::DayRateType& eur_rates, std::array<Price,Spotprice::HOURS_PER_DAY>& sorted_prices) const;
-  
+  [[nodiscard]] bool GetInfo(const NorwegianDay& norwegian_day, Spotprice::AreaQuarterRateType& area_quarter_rates, double& exchange_rate) const;
+  void CopyAndSortHourRates(const Spotprice::QuarterRateType& eur_rates, std::array<HourPrice,Spotprice::HOURS_PER_DAY>& sorted_hour_prices) const;
+  void CopyAndSortQuarterRates(const Spotprice::QuarterRateType& eur_rates, std::array<QuarterPrice,Spotprice::QUARTERS_PER_DAY>& sorted_quarter_prices) const;
+
 public:
   [[nodiscard]] static std::string DoubleToString(const double& value, int precision);
   

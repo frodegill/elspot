@@ -14,8 +14,8 @@ public:
 public:
   MOCK_METHOD(bool, HasEurRate,    (const NorwegianDay& norwegian_day), (const override));
   MOCK_METHOD(bool, CacheEurRates, (const NorwegianDay& norwegian_day), (override));
-  MOCK_METHOD(bool, GetEurRates,   (const NorwegianDay& norwegian_day, AreaRateType& eur_rates), (override));
-  MOCK_METHOD(bool, FetchEurRates, (const NorwegianDay& norwegian_day), (override));
+  MOCK_METHOD(bool, GetEurQuarterRates,   (const NorwegianDay& norwegian_day, AreaQuarterRateType& eur_quarter_rates), (override));
+  MOCK_METHOD(bool, FetchEurQuarterRates, (const NorwegianDay& norwegian_day), (override));
   MOCK_METHOD(bool, RegisterFail,  (const NorwegianDay& norwegian_day), (override));
 };
 

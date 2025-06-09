@@ -69,7 +69,8 @@
     <path d="{other4}"/>
   </g>
   <!-- placeholder for current zone -->
-  <path stroke="maroon" stroke-width="3" stroke-linecap="square" fill="transparent" d="{current}"/>
+  <path stroke="blue" stroke-width="2" stroke-linecap="square" fill="transparent" d="{hour}"/>
+  <path stroke="maroon" stroke-width="3" stroke-linecap="square" fill="transparent" d="{quarter}"/>
 
   <!-- placeholder for hour prices -->
   <g style="font-size:14px;" text-anchor="end">
