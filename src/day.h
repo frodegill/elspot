@@ -23,11 +23,13 @@ public:
   [[nodiscard]] bool operator==(const UTCTime& other) const {return AsUTCTimeT()==other.AsUTCTimeT();}
   [[nodiscard]] bool operator>=(const UTCTime& other) const {return AsUTCTimeT()>=other.AsUTCTimeT();}
   [[nodiscard]] bool operator!=(const UTCTime& other) const {return AsUTCTimeT()!=other.AsUTCTimeT();}
+  [[nodiscard]] UTCTime IncrementHoursCopy(const std::time_t& hours) const {return IncrementMinutesCopy(hours*60);}
+  [[nodiscard]] UTCTime IncrementMinutesCopy(const std::time_t& minutes) const {return IncrementSecondsCopy(minutes*60);}
   [[nodiscard]] UTCTime IncrementSecondsCopy(const std::time_t& seconds) const;
-  [[nodiscard]] UTCTime IncrementHoursCopy(const std::time_t& hours) const {return IncrementSecondsCopy(hours*60*60);}
   [[nodiscard]] UTCTime IncrementNorwegianDaysCopy(const std::time_t& days) const;
-  [[nodiscard]] UTCTime DecrementSecondsCopy(const std::time_t& seconds) const {return IncrementSecondsCopy(-seconds);}
   [[nodiscard]] UTCTime DecrementHoursCopy(const std::time_t& hours) const {return IncrementHoursCopy(-hours);}
+  [[nodiscard]] UTCTime DecrementMinutesCopy(const std::time_t& minutes) const {return IncrementMinutesCopy(-minutes);}
+  [[nodiscard]] UTCTime DecrementSecondsCopy(const std::time_t& seconds) const {return IncrementSecondsCopy(-seconds);}
   [[nodiscard]] UTCTime DecrementNorwegianDaysCopy(const std::time_t& days) const {return IncrementNorwegianDaysCopy(-days);}
   [[nodiscard]] const NorwegianDay AsNorwegianDay() const;
   [[nodiscard]] const NorwegianTime AsNorwegianTime() const;
@@ -36,6 +38,7 @@ public:
   [[nodiscard]] uint8_t GetMonth() const {return static_cast<uint8_t>(m_time_tm_utc.tm_mon+1);}
   [[nodiscard]] uint8_t GetDay() const {return static_cast<uint8_t>(m_time_tm_utc.tm_mday);}
   [[nodiscard]] uint8_t GetHour() const {return static_cast<uint8_t>(m_time_tm_utc.tm_hour);}
+  [[nodiscard]] uint8_t GetQuarter() const {return GetHour()*4 + GetMinute()/15;}
   [[nodiscard]] uint8_t GetMinute() const {return static_cast<uint8_t>(m_time_tm_utc.tm_min);}
   [[nodiscard]] uint8_t GetSecond() const {return static_cast<uint8_t>(m_time_tm_utc.tm_sec);}
   [[nodiscard]] UTCTime DaylightSavingStart() const;
@@ -91,6 +94,7 @@ private:
   NorwegianTime(const std::tm time_tm_norwegiantime);
 public:
   [[nodiscard]] uint8_t GetHour() const {return m_hour;}
+  [[nodiscard]] uint8_t GetQuarter() const {return GetHour()*4 + GetMinute()/15;}
   [[nodiscard]] uint8_t GetMinute() const {return m_minute;}
   [[nodiscard]] uint8_t GetSecond() const {return m_second;}
   [[nodiscard]] std::string ToString() const override;
